@@ -4,23 +4,30 @@
 
 using namespace std;
 
-string trama1 = "DVPDL,1398604000,50000,0.000000,-0.000000,-0.000000,-0.003,0.017,0.002,100*79 $DVEXT,T,X,0310,89.5,69.3,290.9,0,-0.073,0.35,-0.158,0.302,-0.000426945,0.001465221,0.050,0.500257,-0.290460,0.644365,0.500170,19,19,48,25,T,T,T,T,-0.0103,-0.0228,0.2731,-0.0607,0.371,0.391,0.371,0.371,*57 DVEXT,T,X,0310,89.9,69.3,290.9,0,-0.067,0.35,-0.144,0.295,-0.000427010,0.001465353,0.050,0.500257,-0.290460,0.644365,0.500170,19,19,48,25,T,T,F,T,-0.0086,-0.0169,0.0000,-0.0608,0.371,0.391,-1.000,0.371,*65";
+string trama1 = "$DVPDL,160401000,100000,0.000000,-0.000000,-0.000000,0.000,-0.000,-0.000,0*55 $DVEXT,F,X,3330,-1.8,2.4,259.5,-1175,0.000,0.00,-0.000,0.000,0.000000000,0.000000000,0.100,0.091711,0.019853,0.017436,-0.995435,25,25,25,25,F,F,F,F,0.0000,0.0000,0.0000,0.0000,-1.000,-1.000,-1.000,-1.000,*54";
 
 string extractor(string trama1, int num_val, string inicio ="$DVEXT,T,X,0310", char separador = ',');
 
+void string2dec (string str, float *dec){
+  *dec = atof(str.c_str());
+}
 
 int main(){
     string tFinal;
+    float tFinalDec;
 
-    tFinal = extractor(trama1, 6);
+    tFinal = extractor(trama1, 6, "$DVEXT");
 
     cout<<"final "<<tFinal<<endl;
+    // string2dec("10",&tFinalDec);
+    // cout<<"string a decimal "<<tFinalDec<<endl;
+ 
     return 0;
 
 };
 
 
-string extractor(string trama1, int num_val, string inicio ="$DVEXT,T,X,0310", char separador = ','){
+string extractor(string trama1, int num_val, string inicio, char separador){
   int pos = 0,init = 0, end_pos = 0;
   int i = 0, occurrence = 0, len = 0;
   string tramaFinal;
@@ -46,3 +53,4 @@ string extractor(string trama1, int num_val, string inicio ="$DVEXT,T,X,0310", c
   }
   return("error");
 }
+
