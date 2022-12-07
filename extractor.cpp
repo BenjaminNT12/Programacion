@@ -19,8 +19,8 @@ int main(){
     tFinal = extractor(trama1, 6, "$DVEXT");
 
     cout<<"final "<<tFinal<<endl;
-    // string2dec("10",&tFinalDec);
-    // cout<<"string a decimal "<<tFinalDec<<endl;
+    string2dec("10",&tFinalDec);
+    cout<<"string a decimal "<<tFinalDec<<endl;
  
     return 0;
 
