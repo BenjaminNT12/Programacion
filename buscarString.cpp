@@ -20,7 +20,7 @@ int main(){
 };
 
 
-string extractor(string trama1, int num_val, string inicio ="$DVEXT,T,X,0310", char separador = ','){
+string extractor(string trama1, int num_val, string inicio, char separador){
   int pos = 0,init = 0, end_pos = 0;
   int i = 0, occurrence = 0, len = 0;
   string tramaFinal;
