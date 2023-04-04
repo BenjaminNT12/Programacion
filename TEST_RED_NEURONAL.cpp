@@ -119,5 +119,5 @@ void main(void){
 
   InitializationNeuralNetwork(&LAYERS,&NEURON_INPUT,&neurons_InHidden,&Neuron_OUTPUT,&NeuralNetwork);
 	printf("Resultado %2.5f \n",NeuralNetwork.NeuronsOutputVal);
-  getch();
+//   getch();
 }
