@@ -9,9 +9,12 @@ def leer_archivo(nombre_archivo):
             columnas.append(linea.strip().split(','))
     return columnas
 
-nombre_archivo = '/home/nicolas/Github/Programacion/DatosDVL/datosdv.txt'  # Reemplaza 'archivo.txt' con el nombre de tu archivo
+
+nombre_archivo = '/home/nicolas/Github/Programacion/DatosDVL/datosdvl.txt'  # Reemplaza 'archivo.txt' con el nombre de tu archivo
+# nombre_archivo2 = '/home/nicolas/Github/Programacion/DatosDVL/datosdvl.txt'  # Reemplaza 'archivo.txt' con el nombre de tu archivo
 
 datos = leer_archivo(nombre_archivo)
+# datos2 = leer_archivo(nombre_archivo2)
 
 # columna1 = [columna[0] for columna in datos]
 columna2 = [columna[6] for columna in datos]
@@ -40,9 +43,6 @@ for i in range(len(columna2)):
 ax = plt.figure().add_subplot(projection='3d')
 
 ax.plot(carryX, carryY, carryZ, label='DATOS DVL')
-ax.set_xlim([-2.5, 2.5])
-ax.set_ylim([-2.5, 2.5])
-ax.set_zlim([-2.5, 2.5])
 ax.set_xlabel("X Axis")
 ax.set_ylabel("Y Axis")
 ax.set_zlabel("Z Axis")
