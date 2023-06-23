@@ -9,7 +9,7 @@ def leer_archivo(nombre_archivo):
             columnas.append(linea.strip().split(','))
     return columnas
 
-nombre_archivo = r'C:\Users\LENOVO\github\Programacion\DatosDVL\data_dvl521_filtrada.txt'  # Reemplaza 'archivo.txt' con el nombre de tu archivo
+nombre_archivo = '/home/nicolas/Github/Programacion/DatosDVL/data_dvl521_filtrada.txt'  # Reemplaza 'archivo.txt' con el nombre de tu archivo
 
 datos = leer_archivo(nombre_archivo)
 
@@ -29,9 +29,9 @@ for i in range(len(columna1)):
     columna3[i] = float(columna3[i])
     columna4[i] = float(columna4[i])
 
-    carryX[i+1] = float(carryX[i]) + columna2[i]
-    carryY[i+1] = float(carryY[i]) + columna3[i]
-    carryZ[i+1] = float(carryZ[i]) + columna4[i]
+    # carryX[i+1] = float(carryX[i]) + columna2[i]
+    # carryY[i+1] = float(carryY[i]) + columna3[i]
+    # carryZ[i+1] = float(carryZ[i]) + columna4[i]
     #print(columna2[i])
 
 print("Columna 1:", columna1)
