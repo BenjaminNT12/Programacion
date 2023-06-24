@@ -9,7 +9,7 @@ def leer_archivo(nombre_archivo):
             columnas.append(linea.strip().split(','))
     return columnas
 
-nombre_archivo = '/home/nicolas/Github/Programacion/DatosDVL/datosdv.txt'  # Reemplaza 'archivo.txt' con el nombre de tu archivo
+nombre_archivo = '/workspaces/Programacion/DatosDVL/datosdv.txt'  # Reemplaza 'archivo.txt' con el nombre de tu archivo
 
 datos = leer_archivo(nombre_archivo)
 
