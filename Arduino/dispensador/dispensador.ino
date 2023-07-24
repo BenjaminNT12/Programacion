@@ -61,7 +61,7 @@ void setup() {
       scrollPosition = 0;
     }
   }
-  setZeroEeprom(maxMenuItems);
+  // setZeroEeprom(maxMenuItems);
   loadFromEEPROM(maxMenuItems);
   showMenu();
 }
