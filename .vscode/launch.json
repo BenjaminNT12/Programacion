@@ -1,7 +1,7 @@
 {
     "configurations": [
         {
-            "name": "(gdb) Iniciar",
+            "name": "(gdb) Iniciar",       
             "type": "cppdbg",
             "request": "launch",
             "program": "Escriba el nombre del programa; por ejemplo, ${workspaceFolder}/a.out.",

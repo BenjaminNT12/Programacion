@@ -1,5 +1,7 @@
 {
     "files.associations": {
         "xstring": "cpp"
-    }
+    },
+    "editor.fontWeight": "normal",
+    "C_Cpp.errorSquiggles": "disabled"
 }

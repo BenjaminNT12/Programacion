@@ -1,5 +1,11 @@
 {
-    "board": "arduino:avr:uno",
-    "sketch": "dispensador.ino",
-    "programmer": "avrisp"
+    "board": "arduino:avr:mega",
+    "sketch": "Arduino/dispensador/dispensador.ino",
+    "programmer": "avrisp",
+    "configuration": "cpu=atmega2560",
+    "port": "/dev/ttyACM0",
+    "output": "../ArduinoOutput",
+    "includePath": [
+        "/home/nicolas/Arduino/libraries/"
+    ]
 }
