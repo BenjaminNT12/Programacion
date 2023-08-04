@@ -19,5 +19,5 @@ int main(void)
     if(x>10){
         if(x>20) x--;
     }else x++;
-    // printf("%d \n", x);
+    printf("%d \n", x);
 }
