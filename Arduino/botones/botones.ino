@@ -11,6 +11,7 @@ const int botonPin1 = 2;
 const int botonPin2 = 3;
 const int botonPin3 = 4;
 const int botonPin4 = 5;
+const int botonPin5 = 7;
 
 void setup() {
   Wire.begin();        // Inicializar la comunicación I2C
@@ -22,6 +23,7 @@ void setup() {
   pinMode(botonPin2, INPUT_PULLUP);
   pinMode(botonPin3, INPUT_PULLUP);
   pinMode(botonPin4, INPUT_PULLUP);
+  pinMode(botonPin5, INPUT_PULLUP);
 
   lcd.print("Presiona un");
   lcd.setCursor(0, 1);
@@ -31,22 +33,27 @@ void setup() {
 void loop() {
   if (digitalRead(botonPin1) == LOW) {
     lcd.clear();
-    lcd.print("Boton 1");
+    lcd.print("Boton Arriba");
     delay(50);
   }
   else if (digitalRead(botonPin2) == LOW) {
     lcd.clear();
-    lcd.print("Boton 2");
+    lcd.print("Boton Abajo");
     delay(50);
   }
   else if (digitalRead(botonPin3) == LOW) {
     lcd.clear();
-    lcd.print("Boton 3");
+    lcd.print("Boton Menu");
     delay(50);
   }
   else if (digitalRead(botonPin4) == LOW) {
     lcd.clear();
-    lcd.print("Boton 4");
+    lcd.print("Boton Select");
+    delay(50);
+  }
+  else if (digitalRead(botonPin5) == LOW) {
+    lcd.clear();
+    lcd.print("Boton Activacion");
     delay(50);
   }
 }
