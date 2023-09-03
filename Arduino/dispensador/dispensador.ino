@@ -10,9 +10,18 @@ const int buttonDownPin = 2;
 const int buttonUpPin = 3;
 const int buttonMenuPin = 4;
 const int buttonSelectPin = 5;
-const int EnterCoin = 6;
 const int buttonProduct1Pin = 7;
+const int buttonProduct2Pin = 9;
+const int buttonProduct3Pin = 10;
+const int buttonProduct4Pin = 11;
 
+// pin para la ENTRADA de monedas
+const int EnterCoin = 6;
+// pin para la ENTRADA del hooper, contabiliza cuantas 
+// monedas salen de hooper
+const int outCoin = 8;
+
+// Pines para la SALIDAS de las bombas
 const int outputPin  = 30; 
 const int outputPin1 = 31; 
 const int outputPin2 = 32; 
@@ -22,15 +31,22 @@ const int outputPin5 = 35;
 const int outputPin6 = 36; 
 const int outputPin7 = 37; 
 
+// Pines para la SALIDA de activacion del rele del hooper
+const int hooper = 38; 
+
+
 #define prod0button buttonDownPin
 #define prod1button buttonUpPin
 #define prod2button buttonMenuPin
 #define prod3button buttonSelectPin
 #define prod4button buttonProduct1Pin
-// #define prod5button buttonProduct2Pin
-// #define prod6button buttonProduct3Pin
-// #define prod7button buttonProduct4Pin
+#define prod5button buttonProduct2Pin
+#define prod6button buttonProduct3Pin
+#define prod7button buttonProduct4Pin
 
+#define activaHooperSALIDA hooper
+#define salidaDeMONEDAS outCoin
+// #define salidaDeMONEDAS buttonProduct1Pin
 // Variables para el menú
 int menuIndex = 0; // Índice del elemento del menú actual
 const int maxMenuItems = 8; // Número total de elementos del menú
@@ -69,6 +85,7 @@ int messageLength = sizeof(message) - 1; // Longitud del mensaje sin el carácte
 int scrollPosition = 0; // Posición actual del desplazamiento
 unsigned long scrollDelay = 100; // Retardo entre cada paso del desplazamiento
 float totalCredit = 0.0; // Variable para el crédito total acumulado
+bool servicio = false; // Variable para el crédito total acumulado
 
 // Declaración de funciones
 void costOfProduct(const char* message = "", int index = 0);
@@ -88,6 +105,7 @@ void setup() {
   pinMode(buttonMenuPin, INPUT_PULLUP); // Configura el pin del botón de menú como entrada con resistencia pull-up
   pinMode(EnterCoin, INPUT); // Configura el pin de inserción de moneda como entrada
   pinMode(buttonProduct1Pin, INPUT_PULLUP); // Configura el pin del botón del producto 1 como entrada con resistencia pull-up
+  pinMode(outCoin, INPUT_PULLUP); // Configura el pin del botón del producto 1 como entrada con resistencia pull-up
 
   pinMode(LED_BUILTIN, OUTPUT); // Configura el pin del LED incorporado como salida
   pinMode(outputPin, OUTPUT); // Configura el pin del LED como salida
@@ -98,6 +116,7 @@ void setup() {
   pinMode(outputPin5, OUTPUT); // Configura el pin del LED como salida
   pinMode(outputPin6, OUTPUT); // Configura el pin del LED como salida
   pinMode(outputPin7, OUTPUT); // Configura el pin del LED como salida
+  pinMode(hooper, OUTPUT); // Configura el pin del LED como salida
   // Mostrar el mensaje de desplazamiento
   const unsigned long duration = 3000; // Duración del mensaje de desplazamiento en milisegundos
   unsigned long startTime = millis(); // Tiempo de inicio del mensaje de desplazamiento
@@ -123,10 +142,11 @@ void setup() {
 
 void loop() {
   static bool configurationMode = false; // Variable booleana estática para indicar si el dispositivo está en modo de configuración
-  static bool welcomeMessage =  false; // Variable booleana estática para indicar si se ha mostrado el mensaje de bienvenida
-  static bool showOneTime =  false; // Variable booleana estática para indicar si se ha mostrado el crédito del usuario
-  static bool credit =  false; // Variable booleana estática para indicar si el crédito del usuario es suficiente para comprar un producto
-  const char* message =  "Despachando..."; // Mensaje de dispensación
+  static bool welcomeMessage = false; // Variable booleana estática para indicar si se ha mostrado el mensaje de bienvenida
+  static bool showOneTime = false; // Variable booleana estática para indicar si se ha mostrado el crédito del usuario
+  static bool change = false; // Variable booleana estática para indicar si se ha mostrado el crédito del usuario
+  static bool credit = false; // Variable booleana estática para indicar si el crédito del usuario es suficiente para comprar un producto
+  const char* message = "Despachando..."; // Mensaje de dispensación
   bool STATE = false; // Estado del LED
 
   digitalWrite(LED_BUILTIN, !STATE); // Enciende o apaga el LED
@@ -152,30 +172,103 @@ void loop() {
     delay(40); // Espera 40 milisegundos
     credit = checkCredit(totalCredit, 0.0); // Verifica si el crédito es suficiente para comprar un producto
     showOneTime = false; // Reinicia la variable booleana de crédito mostrado
-  }else if(digitalRead(prod0button) == LOW && productCost[0] > 0.0f){ // Si se presiona el botón del producto 0 y el costo del producto es mayor que 0
+    servicio = false;
+  } else if (digitalRead(prod0button) == LOW && productCost[0] > 0.0f) { // Si se presiona el botón del producto 0 y el costo del producto es mayor que 0
     welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
-    credit = dispenceProduct(&totalCredit,productCost[0],0); // Dispensa el producto 0 si el crédito es suficiente
+    servicio = false; // Establece la variable booleana de servicio en falso
+    credit = dispenceProduct(&totalCredit, productCost[0], 0); // Dispensa el producto 0 si el crédito es suficiente
     showOneTime = false; // Reinicia la variable booleana de crédito mostrado
-  }else if(digitalRead(prod1button) == LOW && productCost[1] > 0.0f){ // Si se presiona el botón del producto 1 y el costo del producto es mayor que 0
+    change = true; // Establece la variable booleana de cambio en verdadero
+  } else if (digitalRead(prod1button) == LOW && productCost[1] > 0.0f) { // Si se presiona el botón del producto 1 y el costo del producto es mayor que 0
     welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
-    credit = dispenceProduct(&totalCredit,productCost[1],1); // Dispensa el producto 1 si el crédito es suficiente
+    servicio = false; // Establece la variable booleana de servicio en falso
+    credit = dispenceProduct(&totalCredit, productCost[1], 1); // Dispensa el producto 1 si el crédito es suficiente
     showOneTime = false; // Reinicia la variable booleana de crédito mostrado
-  }else if (digitalRead(prod2button) == LOW && productCost[2] > 0.0f) { // Si se presiona el botón del producto 2 y el costo del producto es mayor que 0
+    change = true; // Establece la variable booleana de cambio en verdadero
+  } else if (digitalRead(prod2button) == LOW && productCost[2] > 0.0f) { // Si se presiona el botón del producto 2 y el costo del producto es mayor que 0
     welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
-    credit = dispenceProduct(&totalCredit,productCost[2],2); // Dispensa el producto 2 si el crédito es suficiente
+    servicio = false; // Establece la variable booleana de servicio en falso
+    credit = dispenceProduct(&totalCredit, productCost[2], 2); // Dispensa el producto 2 si el crédito es suficiente
     showOneTime = false; // Reinicia la variable booleana de crédito mostrado
+    change = true; // Establece la variable booleana de cambio en verdadero
   } else if (digitalRead(prod3button) == LOW && productCost[3] > 0.0f) { // Si se presiona el botón del producto 3 y el costo del producto es mayor que 0
     welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
-    credit = dispenceProduct(&totalCredit,productCost[3],3); // Dispensa el producto 3 si el crédito es suficiente
+    servicio = false; // Establece la variable booleana de servicio en falso
+    credit = dispenceProduct(&totalCredit, productCost[3], 3); // Dispensa el producto 3 si el crédito es suficiente
     showOneTime = false; // Reinicia la variable booleana de crédito mostrado
+    change = true; // Establece la variable booleana de cambio en verdadero
   } else if (digitalRead(prod4button) == LOW && productCost[4] > 0.0f) { // Si se presiona el botón del producto 4 y el costo del producto es mayor que 0
     welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
-    credit = dispenceProduct(&totalCredit,productCost[4],4); // Dispensa el producto 4 si el crédito es suficiente
+    servicio = false; // Establece la variable booleana de servicio en falso
+    credit = dispenceProduct(&totalCredit, productCost[4], 4); // Dispensa el producto 4 si el crédito es suficiente
     showOneTime = false; // Reinicia la variable booleana de crédito mostrado
+    change = true; // Establece la variable booleana de cambio en verdadero
+  } else if (digitalRead(prod5button) == LOW && productCost[5] > 0.0f) { // Si se presiona el botón del producto 5 y el costo del producto es mayor que 0
+    welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
+    servicio = false; // Establece la variable booleana de servicio en falso
+    credit = dispenceProduct(&totalCredit, productCost[5], 5); // Dispensa el producto 5 si el crédito es suficiente
+    showOneTime = false; // Reinicia la variable booleana de crédito mostrado
+    change = true; // Establece la variable booleana de cambio en verdadero
+  } else if (digitalRead(prod6button) == LOW && productCost[6] > 0.0f) { // Si se presiona el botón del producto 6 y el costo del producto es mayor que 0
+    welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
+    servicio = false; // Establece la variable booleana de servicio en falso
+    credit = dispenceProduct(&totalCredit, productCost[6], 6); // Dispensa el producto 6 si el crédito es suficiente
+    showOneTime = false; // Reinicia la variable booleana de crédito mostrado
+    change = true; // Establece la variable booleana de cambio en verdadero
+  } else if (digitalRead(prod7button) == LOW && productCost[7] > 0.0f) { // Si se presiona el botón del producto 7 y el costo del producto es mayor que 0
+    welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
+    servicio = false; // Establece la variable booleana de servicio en falso
+    credit = dispenceProduct(&totalCredit, productCost[7], 7); // Dispensa el producto 7 si el crédito es suficiente
+    showOneTime = false; // Reinicia la variable booleana de crédito mostrado
+    change = true; // Establece la variable booleana de cambio en verdadero
   }else if(credit == true && showOneTime == false){ // Si el crédito es suficiente y el crédito no se ha mostrado
-    showOneTime = showCredit(totalCredit); // Muestra el crédito en la pantalla LCD y actualiza la variable booleana de crédito mostrado
+  showOneTime = showCredit(totalCredit); // Muestra el crédito en la pantalla LCD y actualiza la variable booleana de crédito mostrado
+  credit = checkCredit(totalCredit, 0.0); // Verifica si el crédito restante es suficiente para comprar otro producto
+  
+  // Si hay crédito restante, se ha solicitado cambio y se ha seleccionado el servicio
+  if (totalCredit > 0.0 && change == true && servicio == true){
+    showChangeMessage(); // Muestra el mensaje de cambio en la pantalla LCD
+    digitalWrite(activaHooperSALIDA, HIGH); // Activa la salida del dispensador de monedas
+    
+    // Mientras haya crédito restante, se espera a que se retiren las monedas
+    while (totalCredit > 0.0){
+      if(digitalRead(salidaDeMONEDAS) == LOW){ // Si se detecta una moneda en la salida
+        totalCredit -= 1.0; // Se resta el valor de la moneda al crédito restante
+        delay(200); // Se espera un tiempo para evitar contar varias veces la misma moneda
+      }
+    }
+    
+    digitalWrite(activaHooperSALIDA, LOW); // Desactiva la salida del dispensador de monedas
+    showGoodbyeMessage(); // Muestra el mensaje de despedida en la pantalla LCD
     credit = checkCredit(totalCredit, 0.0); // Verifica si el crédito restante es suficiente para comprar otro producto
+    change = false; // Reinicia la variable booleana de cambio solicitado
+    servicio = false; // Reinicia la variable booleana de servicio seleccionado
   }
+}
+}
+
+/**
+ * Muestra un mensaje en la pantalla LCD indicando el cambio que se debe entregar al usuario.
+ */
+void showChangeMessage(){
+  lcd.clear(); // Limpia la pantalla LCD
+  lcd.setCursor(0, 0); // Establece el cursor en la primera fila y primera columna
+  lcd.print("Tome su cambio: "); // Muestra el mensaje "Tome su cambio: "
+  lcd.setCursor(0, 1); // Establece el cursor en la segunda fila y primera columna
+  lcd.print("$: "); // Muestra el símbolo de dólar
+  lcd.print(totalCredit); // Muestra el valor del crédito restante como cambio
+}
+
+/**
+ * Muestra un mensaje de despedida en la pantalla LCD después de que el usuario ha realizado una compra.
+ */
+void showGoodbyeMessage(){
+  lcd.clear(); // Limpia la pantalla LCD
+  lcd.setCursor(0, 0); // Establece el cursor en la primera fila y primera columna
+  lcd.print("Gracias por su"); // Muestra el mensaje "Gracias por su"
+  lcd.setCursor(5, 1); // Establece el cursor en la segunda fila y sexta columna
+  lcd.print("compra"); // Muestra el mensaje "compra"
+  delay(2000); // Espera 2 segundos antes de continuar
 }
 
 /**
@@ -564,7 +657,7 @@ void showProduct(int index) {
     delay((int)((float)(pumpTime[index]/100.0)*1000.0));  // Espera el tiempo de dispensación del producto
   }
   activeOutput(0, index);
-
+  servicio = true;
   // Espera dos segundos y muestra un mensaje de agradecimiento
   delay(2000);
   goodBye();
