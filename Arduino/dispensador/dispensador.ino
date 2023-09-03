@@ -13,6 +13,15 @@ const int buttonSelectPin = 5;
 const int EnterCoin = 6;
 const int buttonProduct1Pin = 7;
 
+const int outputPin  = 30; 
+const int outputPin1 = 31; 
+const int outputPin2 = 32; 
+const int outputPin3 = 33; 
+const int outputPin4 = 34; 
+const int outputPin5 = 35; 
+const int outputPin6 = 36; 
+const int outputPin7 = 37; 
+
 #define prod0button buttonDownPin
 #define prod1button buttonUpPin
 #define prod2button buttonMenuPin
@@ -55,7 +64,7 @@ byte customChar[] = {
 };
 
 // Variables para el desplazamiento del mensaje
-char message[] = "Limpieza..."; // Mensaje de desplazamiento
+char message[] = "Dispensador..."; // Mensaje de desplazamiento
 int messageLength = sizeof(message) - 1; // Longitud del mensaje sin el carácter nulo
 int scrollPosition = 0; // Posición actual del desplazamiento
 unsigned long scrollDelay = 100; // Retardo entre cada paso del desplazamiento
@@ -79,7 +88,16 @@ void setup() {
   pinMode(buttonMenuPin, INPUT_PULLUP); // Configura el pin del botón de menú como entrada con resistencia pull-up
   pinMode(EnterCoin, INPUT); // Configura el pin de inserción de moneda como entrada
   pinMode(buttonProduct1Pin, INPUT_PULLUP); // Configura el pin del botón del producto 1 como entrada con resistencia pull-up
+
   pinMode(LED_BUILTIN, OUTPUT); // Configura el pin del LED incorporado como salida
+  pinMode(outputPin, OUTPUT); // Configura el pin del LED como salida
+  pinMode(outputPin1, OUTPUT); // Configura el pin del LED como salida
+  pinMode(outputPin2, OUTPUT); // Configura el pin del LED como salida
+  pinMode(outputPin3, OUTPUT); // Configura el pin del LED como salida
+  pinMode(outputPin4, OUTPUT); // Configura el pin del LED como salida
+  pinMode(outputPin5, OUTPUT); // Configura el pin del LED como salida
+  pinMode(outputPin6, OUTPUT); // Configura el pin del LED como salida
+  pinMode(outputPin7, OUTPUT); // Configura el pin del LED como salida
   // Mostrar el mensaje de desplazamiento
   const unsigned long duration = 3000; // Duración del mensaje de desplazamiento en milisegundos
   unsigned long startTime = millis(); // Tiempo de inicio del mensaje de desplazamiento
@@ -89,6 +107,8 @@ void setup() {
     lcd.clear(); // Borra la pantalla LCD
     lcd.setCursor(15 - scrollPosition, 0); // Establece la posición del cursor en la pantalla LCD
     lcd.print(message); // Imprime el mensaje de desplazamiento en la pantalla LCD
+    lcd.setCursor(0, 1); // Establece la posición del cursor en la pantalla LCD
+    lcd.print("Version 0.0.1"); // Imprime el mensaje de desplazamiento en la pantalla LCD
     delay(scrollDelay); // Espera un tiempo para el desplazamiento
     scrollPosition++; // Incrementa la posición de desplazamiento
     if (scrollPosition > messageLength + 16) { // Si la posición de desplazamiento es mayor que la longitud del mensaje más 16
@@ -537,14 +557,20 @@ void showProduct(int index) {
   lcd.clear();
   costOfProduct(message, index);
 
+  activeOutput(1, index);
   // Muestra una barra de progreso mientras se dispensa el producto
   for (int percent = 0; percent <= 100; percent++) {
     displayProgressBar(percent);
     delay((int)((float)(pumpTime[index]/100.0)*1000.0));  // Espera el tiempo de dispensación del producto
   }
+  activeOutput(0, index);
 
   // Espera dos segundos y muestra un mensaje de agradecimiento
   delay(2000);
+  goodBye();
+}
+
+void goodBye(){
   lcd.clear();
   lcd.setCursor(4, 0);
   lcd.print("Gracias ");
@@ -552,6 +578,46 @@ void showProduct(int index) {
   lcd.print("Vuelva pronto");
   delay(2000);
   lcd.clear();
+}
+
+void activeOutput(int active, int index){
+  if (active == 1){
+    if (index == 0){
+      digitalWrite(outputPin, HIGH);  // Enciende la salida del producto 1
+    }else if(index == 1){
+      digitalWrite(outputPin1, HIGH);  // Enciende la salida del producto 2
+    }else if(index == 2){
+      digitalWrite(outputPin2, HIGH);  // Enciende la salida del producto 3
+    }else if(index == 3){
+      digitalWrite(outputPin3, HIGH);  // Enciende la salida del producto 4
+    }else if(index == 4){
+      digitalWrite(outputPin4, HIGH);  // Enciende la salida del producto 5
+    }else if(index == 5){
+      digitalWrite(outputPin5, HIGH);  // Enciende la salida del producto 6
+    }else if(index == 6){
+      digitalWrite(outputPin6, HIGH);  // Enciende la salida del producto 7
+    }else if(index == 7){
+      digitalWrite(outputPin7, HIGH);  // Enciende la salida del producto 8
+    }
+  }else if(active == 0){
+    if(index == 0){
+      digitalWrite(outputPin, LOW);  // Apaga la salida del producto 1
+    }else if(index == 1){
+      digitalWrite(outputPin1, LOW);  // Apaga la salida del producto 2
+    }else if(index == 2){
+      digitalWrite(outputPin2, LOW);  // Apaga la salida del producto 3
+    }else if(index == 3){
+      digitalWrite(outputPin3, LOW);  // Apaga la salida del producto 4
+    }else if(index == 4){
+      digitalWrite(outputPin4, LOW);  // Apaga la salida del producto 5
+    }else if(index == 5){
+      digitalWrite(outputPin5, LOW);  // Apaga la salida del producto 6
+    }else if(index == 6){
+      digitalWrite(outputPin6, LOW);  // Apaga la salida del producto 7
+    }else if(index == 7){
+      digitalWrite(outputPin7, LOW);  // Apaga la salida del producto 8
+    }
+  }
 }
 
 /**
