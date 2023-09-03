@@ -7,8 +7,8 @@
 LiquidCrystal_I2C lcd(LCD_ADDRESS, 16, 2); // Crear objeto del LCD
 
 // Pines de los botones
-const int botonPin1 = 2;
-const int botonPin2 = 3;
+const int botonPin1 = 3;
+const int botonPin2 = 2;
 const int botonPin3 = 4;
 const int botonPin4 = 5;
 const int botonPin5 = 7;
