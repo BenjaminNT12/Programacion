@@ -88,7 +88,7 @@ float totalCredit = 0.0; // Variable para el crédito total acumulado
 bool servicio = false; // Variable para el crédito total acumulado
 
 // Declaración de funciones
-void costOfProduct(const char* message = "", int index = 0);
+void costOfProduct(const char*, int index);
 void displayProgressBar(int percent);
 
 void setup() {
@@ -752,3 +752,5 @@ void checkProductInfo(float quantity, float price, float time, int row, int col)
   // Muestra el estado en la pantalla
   displayStatus(row, col, condition);
 }
+
+
