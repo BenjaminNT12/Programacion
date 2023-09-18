@@ -12,6 +12,6 @@ def solve(A):
     return A
 
 # Example usage
-A = "the sky is blue"
+A = "The sky is blue"
 B = solve(A)
 print(B)
