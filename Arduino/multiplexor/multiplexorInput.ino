@@ -11,7 +11,7 @@ void setup() {
   Serial.begin(115200);
   // Configuramos los pines de control del multiplexor como salidas
   pinMode(S0, INPUT_PULLUP);
-  pinMode(S1, INPUT_PULLUP);e
+  pinMode(S1, INPUT_PULLUP);
   pinMode(S2, INPUT_PULLUP);
   pinMode(S3, INPUT_PULLUP);
 
