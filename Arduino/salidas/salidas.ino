@@ -3,7 +3,13 @@
 int dataPin = 13;	// Data pin of 74HC595 is connected to Digital pin 13
 int latchPin = A0;	// Latch pin of 74HC595 is connected to Digital pin A0
 int clockPin = A1;	// Clock pin of 74HC595 is connected to Digital pin A1
+// pin para la ENTRADA de monedas
+const int EnterCoin = 7;
+// pin para la ENTRADA del hooper, contabiliza cuantas 
+// monedas salen de hooper
+const int outCoin = 8;
 
+const int hooper = 6; 
 byte leds = 0;		// Variable to hold the pattern of which LEDs are currently turned on or off
 
 /*
@@ -16,7 +22,11 @@ void setup()
   pinMode(latchPin, OUTPUT);
   pinMode(dataPin, OUTPUT);  
   pinMode(clockPin, OUTPUT);
+  pinMode(outCoin, INPUT);
+  pinMode(EnterCoin, INPUT);
+  pinMode(hooper, OUTPUT);
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(clockPin, OUTPUT);
 }
 
 /*
@@ -41,10 +51,13 @@ void loop()
   // for(int i=0; i<8; i++)
   // {
   //   setOutput(i, true);
-  //   delay(500);
+  //   delay(100);
   //   setOutput(i, false);
   // }
-
+  // digitalWrite(hooper, HIGH);  // turn the LED on (HIGH is the voltage level)
+  // delay(100);                      // wait for a second
+  // digitalWrite(hooper, LOW);   // turn the LED off by making the voltage LOW
+  // delay(100);   
 }
 
 /*

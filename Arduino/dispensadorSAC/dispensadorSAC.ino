@@ -6,7 +6,7 @@
 ShiftIn<2> shift;
 
 // Conexión de la pantalla LCD
-LiquidCrystal_I2C lcd(0x27, 16, 2);
+LiquidCrystal_I2C lcd(0x27, 20, 4);
 
 // Pines para los botones
 const int buttonDownPin = 0;
@@ -20,7 +20,7 @@ const int buttonProduct3Pin = 6;
 const int buttonProduct4Pin = 7;
 
 // pin para la ENTRADA de monedas
-const int EnterCoin = 6;
+const int EnterCoin = 7;
 // pin para la ENTRADA del hooper, contabiliza cuantas 
 // monedas salen de hooper
 const int outCoin = 8;
@@ -132,6 +132,8 @@ void setup() {
   const unsigned long duration = 3000; // Duración del mensaje de desplazamiento en milisegundos
   unsigned long startTime = millis(); // Tiempo de inicio del mensaje de desplazamiento
   totalCredit = 0.0; // Inicializa el crédito total en cero
+
+  for(int i = 0; i < 8; i++) setOutput(i, false);
 
   while (millis() - startTime < duration) { // Mientras el tiempo transcurrido sea menor que la duración del mensaje de desplazamiento
     lcd.clear(); // Borra la pantalla LCD
