@@ -1,19 +1,23 @@
 #include <Wire.h> // Biblioteca para la comunicación I2C
 #include <LiquidCrystal_I2C.h> // Biblioteca para controlar la pantalla LCD
 #include <EEPROM.h> // Biblioteca para acceder a la memoria EEPROM
+#include <ShiftIn.h>
+
+ShiftIn<2> shift;
 
 // Conexión de la pantalla LCD
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // Pines para los botones
-const int buttonDownPin = 2;
-const int buttonUpPin = 3;
-const int buttonMenuPin = 4;
-const int buttonSelectPin = 5;
-const int buttonProduct1Pin = 7;
-const int buttonProduct2Pin = 9;
-const int buttonProduct3Pin = 10;
-const int buttonProduct4Pin = 11;
+const int buttonDownPin = 0;
+const int buttonUpPin = 1;
+const int buttonMenuPin = 2;
+const int buttonSelectPin = 3;
+
+const int buttonProduct1Pin = 4;
+const int buttonProduct2Pin = 5;
+const int buttonProduct3Pin = 6;
+const int buttonProduct4Pin = 7;
 
 // pin para la ENTRADA de monedas
 const int EnterCoin = 6;
@@ -22,14 +26,19 @@ const int EnterCoin = 6;
 const int outCoin = 8;
 
 // Pines para la SALIDAS de las bombas
-const int outputPin  = 30; 
-const int outputPin1 = 31; 
-const int outputPin2 = 32; 
-const int outputPin3 = 33; 
-const int outputPin4 = 34; 
-const int outputPin5 = 35; 
-const int outputPin6 = 36; 
-const int outputPin7 = 37; 
+const int outputPin  = 0; 
+const int outputPin1 = 1; 
+const int outputPin2 = 2; 
+const int outputPin3 = 3; 
+const int outputPin4 = 4; 
+const int outputPin5 = 5; 
+const int outputPin6 = 6; 
+const int outputPin7 = 7; 
+
+const int dataPin  = 13;	// Data pin of 74HC595 is connected to Digital pin 13
+const int latchPin = A0;	// Latch pin of 74HC595 is connected to Digital pin A0
+const int clockPin = A1;	// Clock pin of 74HC595 is connected to Digital pin A1
+byte leds = 0;		// Variable to hold the pattern of which LEDs are currently turned on or off
 
 // Pines para la SALIDA de activacion del rele del hooper
 const int hooper = 38; 
@@ -93,6 +102,7 @@ void displayProgressBar(int percent);
 
 void setup() {
   Serial.begin(115200); // Inicializa la comunicación serial a 115200 baudios
+  shift.begin(10, 9, 11, 12);
   lcd.init(); // Inicializa la pantalla LCD
   lcd.backlight(); // Enciende la luz de fondo de la pantalla LCD
   lcd.createChar(0, customChar); // Crea un carácter personalizado en la posición 0 del conjunto de caracteres
@@ -107,16 +117,17 @@ void setup() {
   pinMode(buttonProduct1Pin, INPUT_PULLUP); // Configura el pin del botón del producto 1 como entrada con resistencia pull-up
   pinMode(outCoin, INPUT_PULLUP); // Configura el pin del botón del producto 1 como entrada con resistencia pull-up
 
-  pinMode(LED_BUILTIN, OUTPUT); // Configura el pin del LED incorporado como salida
-  pinMode(outputPin, OUTPUT); // Configura el pin del LED como salida
-  pinMode(outputPin1, OUTPUT); // Configura el pin del LED como salida
-  pinMode(outputPin2, OUTPUT); // Configura el pin del LED como salida
-  pinMode(outputPin3, OUTPUT); // Configura el pin del LED como salida
-  pinMode(outputPin4, OUTPUT); // Configura el pin del LED como salida
-  pinMode(outputPin5, OUTPUT); // Configura el pin del LED como salida
-  pinMode(outputPin6, OUTPUT); // Configura el pin del LED como salida
-  pinMode(outputPin7, OUTPUT); // Configura el pin del LED como salida
+  pinMode(LED_BUILTIN, OUTPUT); // Configura el pin del LED incorporado como salida  
+
   pinMode(hooper, OUTPUT); // Configura el pin del LED como salida
+
+  // Set all the pins of 74HC595 as OUTPUT
+  pinMode(latchPin, OUTPUT);
+  pinMode(dataPin, OUTPUT);  
+  pinMode(clockPin, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
+
+
   // Mostrar el mensaje de desplazamiento
   const unsigned long duration = 3000; // Duración del mensaje de desplazamiento en milisegundos
   unsigned long startTime = millis(); // Tiempo de inicio del mensaje de desplazamiento
@@ -141,6 +152,7 @@ void setup() {
 
 
 void loop() {
+
   static bool configurationMode = false; // Variable booleana estática para indicar si el dispositivo está en modo de configuración
   static bool welcomeMessage = false; // Variable booleana estática para indicar si se ha mostrado el mensaje de bienvenida
   static bool showOneTime = false; // Variable booleana estática para indicar si se ha mostrado el crédito del usuario
@@ -150,14 +162,14 @@ void loop() {
   bool STATE = false; // Estado del LED
 
   digitalWrite(LED_BUILTIN, !STATE); // Enciende o apaga el LED
-  if (digitalRead(buttonMenuPin) == LOW && digitalRead(buttonSelectPin) == LOW) { // Si se presionan los botones de menú y selección al mismo tiempo
+  if (getState(buttonMenuPin) == LOW && getState(buttonSelectPin) == LOW) { // Si se presionan los botones de menú y selección al mismo tiempo
     configurationMode = true; // El dispositivo entra en modo de configuración
     showMenu(); // Muestra el menú en la pantalla LCD
     delay(1000); // Espera 1 segundo
-    while(digitalRead(buttonMenuPin) == LOW || digitalRead(buttonSelectPin) == LOW){;} // Espera hasta que se suelten los botones de menú y selección
+    while(getState(buttonMenuPin) == LOW || getState(buttonSelectPin) == LOW){;} // Espera hasta que se suelten los botones de menú y selección
     while (configurationMode) { // Mientras el dispositivo esté en modo de configuración
       showConfigurationMode(); // Muestra el modo de configuración en la pantalla LCD
-      if (digitalRead(buttonMenuPin) == LOW) { // Si se presiona el botón de menú
+      if (getState(buttonMenuPin) == LOW) { // Si se presiona el botón de menú
         configurationMode = false; // El dispositivo sale del modo de configuración
         welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
         delay(200); // Espera 200 milisegundos
@@ -167,55 +179,55 @@ void loop() {
   } else if (configurationMode == false && welcomeMessage == false && credit == false) { // Si el dispositivo no está en modo de configuración, no se ha mostrado el mensaje de bienvenida y el crédito del usuario no es suficiente para comprar un producto
       welcomeMessage = true; // Muestra el mensaje de bienvenida en la pantalla LCD
       showWelcomeMessage();
-  } else if (digitalRead(EnterCoin) == HIGH) { // Si se inserta una moneda
+  } else if (getState(EnterCoin) == HIGH) { // Si se inserta una moneda
     totalCredit += 1.0; // Añade 1.0 al crédito total del usuario
     delay(40); // Espera 40 milisegundos
     credit = checkCredit(totalCredit, 0.0); // Verifica si el crédito es suficiente para comprar un producto
     showOneTime = false; // Reinicia la variable booleana de crédito mostrado
     servicio = false;
-  } else if (digitalRead(prod0button) == LOW && productCost[0] > 0.0f) { // Si se presiona el botón del producto 0 y el costo del producto es mayor que 0
+  } else if (getState(prod0button) == LOW && productCost[0] > 0.0f) { // Si se presiona el botón del producto 0 y el costo del producto es mayor que 0
     welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
     servicio = false; // Establece la variable booleana de servicio en falso
     credit = dispenceProduct(&totalCredit, productCost[0], 0); // Dispensa el producto 0 si el crédito es suficiente
     showOneTime = false; // Reinicia la variable booleana de crédito mostrado
     change = true; // Establece la variable booleana de cambio en verdadero
-  } else if (digitalRead(prod1button) == LOW && productCost[1] > 0.0f) { // Si se presiona el botón del producto 1 y el costo del producto es mayor que 0
+  } else if (getState(prod1button) == LOW && productCost[1] > 0.0f) { // Si se presiona el botón del producto 1 y el costo del producto es mayor que 0
     welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
     servicio = false; // Establece la variable booleana de servicio en falso
     credit = dispenceProduct(&totalCredit, productCost[1], 1); // Dispensa el producto 1 si el crédito es suficiente
     showOneTime = false; // Reinicia la variable booleana de crédito mostrado
     change = true; // Establece la variable booleana de cambio en verdadero
-  } else if (digitalRead(prod2button) == LOW && productCost[2] > 0.0f) { // Si se presiona el botón del producto 2 y el costo del producto es mayor que 0
+  } else if (getState(prod2button) == LOW && productCost[2] > 0.0f) { // Si se presiona el botón del producto 2 y el costo del producto es mayor que 0
     welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
     servicio = false; // Establece la variable booleana de servicio en falso
     credit = dispenceProduct(&totalCredit, productCost[2], 2); // Dispensa el producto 2 si el crédito es suficiente
     showOneTime = false; // Reinicia la variable booleana de crédito mostrado
     change = true; // Establece la variable booleana de cambio en verdadero
-  } else if (digitalRead(prod3button) == LOW && productCost[3] > 0.0f) { // Si se presiona el botón del producto 3 y el costo del producto es mayor que 0
+  } else if (getState(prod3button) == LOW && productCost[3] > 0.0f) { // Si se presiona el botón del producto 3 y el costo del producto es mayor que 0
     welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
     servicio = false; // Establece la variable booleana de servicio en falso
     credit = dispenceProduct(&totalCredit, productCost[3], 3); // Dispensa el producto 3 si el crédito es suficiente
     showOneTime = false; // Reinicia la variable booleana de crédito mostrado
     change = true; // Establece la variable booleana de cambio en verdadero
-  } else if (digitalRead(prod4button) == LOW && productCost[4] > 0.0f) { // Si se presiona el botón del producto 4 y el costo del producto es mayor que 0
+  } else if (getState(prod4button) == LOW && productCost[4] > 0.0f) { // Si se presiona el botón del producto 4 y el costo del producto es mayor que 0
     welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
     servicio = false; // Establece la variable booleana de servicio en falso
     credit = dispenceProduct(&totalCredit, productCost[4], 4); // Dispensa el producto 4 si el crédito es suficiente
     showOneTime = false; // Reinicia la variable booleana de crédito mostrado
     change = true; // Establece la variable booleana de cambio en verdadero
-  } else if (digitalRead(prod5button) == LOW && productCost[5] > 0.0f) { // Si se presiona el botón del producto 5 y el costo del producto es mayor que 0
+  } else if (getState(prod5button) == LOW && productCost[5] > 0.0f) { // Si se presiona el botón del producto 5 y el costo del producto es mayor que 0
     welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
     servicio = false; // Establece la variable booleana de servicio en falso
     credit = dispenceProduct(&totalCredit, productCost[5], 5); // Dispensa el producto 5 si el crédito es suficiente
     showOneTime = false; // Reinicia la variable booleana de crédito mostrado
     change = true; // Establece la variable booleana de cambio en verdadero
-  } else if (digitalRead(prod6button) == LOW && productCost[6] > 0.0f) { // Si se presiona el botón del producto 6 y el costo del producto es mayor que 0
+  } else if (getState(prod6button) == LOW && productCost[6] > 0.0f) { // Si se presiona el botón del producto 6 y el costo del producto es mayor que 0
     welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
     servicio = false; // Establece la variable booleana de servicio en falso
     credit = dispenceProduct(&totalCredit, productCost[6], 6); // Dispensa el producto 6 si el crédito es suficiente
     showOneTime = false; // Reinicia la variable booleana de crédito mostrado
     change = true; // Establece la variable booleana de cambio en verdadero
-  } else if (digitalRead(prod7button) == LOW && productCost[7] > 0.0f) { // Si se presiona el botón del producto 7 y el costo del producto es mayor que 0
+  } else if (getState(prod7button) == LOW && productCost[7] > 0.0f) { // Si se presiona el botón del producto 7 y el costo del producto es mayor que 0
     welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
     servicio = false; // Establece la variable booleana de servicio en falso
     credit = dispenceProduct(&totalCredit, productCost[7], 7); // Dispensa el producto 7 si el crédito es suficiente
@@ -225,26 +237,26 @@ void loop() {
   showOneTime = showCredit(totalCredit); // Muestra el crédito en la pantalla LCD y actualiza la variable booleana de crédito mostrado
   credit = checkCredit(totalCredit, 0.0); // Verifica si el crédito restante es suficiente para comprar otro producto
   
-  // Si hay crédito restante, se ha solicitado cambio y se ha seleccionado el servicio
-  if (totalCredit > 0.0 && change == true && servicio == true){
-    showChangeMessage(); // Muestra el mensaje de cambio en la pantalla LCD
-    digitalWrite(activaHooperSALIDA, HIGH); // Activa la salida del dispensador de monedas
-    
-    // Mientras haya crédito restante, se espera a que se retiren las monedas
-    while (totalCredit > 0.0){
-      if(digitalRead(salidaDeMONEDAS) == LOW){ // Si se detecta una moneda en la salida
-        totalCredit -= 1.0; // Se resta el valor de la moneda al crédito restante
-        delay(200); // Se espera un tiempo para evitar contar varias veces la misma moneda
+    // Si hay crédito restante, se ha solicitado cambio y se ha seleccionado el servicio
+    if (totalCredit > 0.0 && change == true && servicio == true){
+      showChangeMessage(); // Muestra el mensaje de cambio en la pantalla LCD
+      digitalWrite(activaHooperSALIDA, HIGH); // Activa la salida del dispensador de monedas
+      
+      // Mientras haya crédito restante, se espera a que se retiren las monedas
+      while (totalCredit > 0.0){
+        if(getState(salidaDeMONEDAS) == LOW){ // Si se detecta una moneda en la salida
+          totalCredit -= 1.0; // Se resta el valor de la moneda al crédito restante
+          delay(200); // Se espera un tiempo para evitar contar varias veces la misma moneda
+        }
       }
+      
+      digitalWrite(activaHooperSALIDA, LOW); // Desactiva la salida del dispensador de monedas
+      showGoodbyeMessage(); // Muestra el mensaje de despedida en la pantalla LCD
+      credit = checkCredit(totalCredit, 0.0); // Verifica si el crédito restante es suficiente para comprar otro producto
+      change = false; // Reinicia la variable booleana de cambio solicitado
+      servicio = false; // Reinicia la variable booleana de servicio seleccionado
     }
-    
-    digitalWrite(activaHooperSALIDA, LOW); // Desactiva la salida del dispensador de monedas
-    showGoodbyeMessage(); // Muestra el mensaje de despedida en la pantalla LCD
-    credit = checkCredit(totalCredit, 0.0); // Verifica si el crédito restante es suficiente para comprar otro producto
-    change = false; // Reinicia la variable booleana de cambio solicitado
-    servicio = false; // Reinicia la variable booleana de servicio seleccionado
   }
-}
 }
 
 /**
@@ -337,15 +349,15 @@ void showMenuCreditInsuficient(){
  * @return Devuelve un valor booleano que indica si se ha salido del modo de configuración.
  */
 bool showConfigurationMode() {
-  if (digitalRead(buttonDownPin) == LOW) { // Si se presiona el botón de abajo
+  if (getState(buttonDownPin) == LOW) { // Si se presiona el botón de abajo
     menuIndex = (menuIndex - 1 + maxMenuItems) % maxMenuItems; // Decrementa el índice del producto actual
     showMenu(); // Muestra el menú actualizado
     delay(200); // Espera 200 milisegundos para evitar rebotes en el botón
-  } else if (digitalRead(buttonUpPin) == LOW) { // Si se presiona el botón de arriba
+  } else if (getState(buttonUpPin) == LOW) { // Si se presiona el botón de arriba
     menuIndex = (menuIndex + 1) % maxMenuItems; // Incrementa el índice del producto actual
     showMenu(); // Muestra el menú actualizado
     delay(200); // Espera 200 milisegundos para evitar rebotes en el botón
-  } else if (digitalRead(buttonSelectPin) == LOW) { // Si se presiona el botón de selección
+  } else if (getState(buttonSelectPin) == LOW) { // Si se presiona el botón de selección
     delay(200); // Espera 200 milisegundos para evitar rebotes en el botón
     showSubMenu(); // Muestra el submenú para configurar el producto actual
     showMenu(); // Muestra el menú actualizado
@@ -388,11 +400,11 @@ bool showSubMenu() {
   lcd.print(productCost[menuIndex], 1); // Imprime el costo del producto seleccionado
 
   while (true) {
-      if (digitalRead(buttonUpPin) == LOW) { // Si se presiona el botón de arriba
+      if (getState(buttonUpPin) == LOW) { // Si se presiona el botón de arriba
         productQuantity[menuIndex] += 1; // Incrementa la cantidad del producto seleccionado
         writeInEEPROM(productQuantity[menuIndex], menuIndex); // Escribe la cantidad en la memoria EEPROM
         delay(200); // Espera 200 milisegundos para evitar múltiples pulsaciones
-      } else if (digitalRead(buttonDownPin) == LOW) { // Si se presiona el botón de abajo
+      } else if (getState(buttonDownPin) == LOW) { // Si se presiona el botón de abajo
         productQuantity[menuIndex] -= 1; // Decrementa la cantidad del producto seleccionado
         if (productQuantity[menuIndex] <= 0.0){ // Si la cantidad es menor o igual a cero
           productQuantity[menuIndex] = 0.0; // Establece la cantidad en cero
@@ -411,12 +423,12 @@ bool showSubMenu() {
         }
         selectButtonStartTime = millis(); // Reinicia el temporizador
       }
-      if (digitalRead(buttonSelectPin) == LOW) { // Si se presiona el botón de selección
+      if (getState(buttonSelectPin) == LOW) { // Si se presiona el botón de selección
         lcd.print(productQuantity[menuIndex], 1); // Imprime la cantidad del producto seleccionado
         delay(1000); // Espera 1 segundo
         break; // Sale del bucle while
       }
-      if (digitalRead(buttonMenuPin) == LOW) { // Si se presiona el botón de menú
+      if (getState(buttonMenuPin) == LOW) { // Si se presiona el botón de menú
         lcd.print(productQuantity[menuIndex], 1); // Imprime la cantidad del producto seleccionado
         delay(200); // Espera 200 milisegundos para evitar múltiples pulsaciones
         return false; // Retorna falso
@@ -424,11 +436,11 @@ bool showSubMenu() {
     }
 
     while (true) {
-      if (digitalRead(buttonUpPin) == LOW) { // Si se presiona el botón de arriba
+      if (getState(buttonUpPin) == LOW) { // Si se presiona el botón de arriba
         productCost[menuIndex] += 1; // Incrementa el costo del producto seleccionado
         writeInEEPROM(productCost[menuIndex], maxMenuItems+menuIndex); // Escribe el costo en la memoria EEPROM
         delay(200); // Espera 200 milisegundos para evitar múltiples pulsaciones
-      } else if (digitalRead(buttonDownPin) == LOW) { // Si se presiona el botón de abajo
+      } else if (getState(buttonDownPin) == LOW) { // Si se presiona el botón de abajo
         productCost[menuIndex] -= 1; // Decrementa el costo del producto seleccionado
         if (productCost[menuIndex] <= 0.0){ // Si el costo es menor o igual a cero
           productCost[menuIndex] = 0.0; // Establece el costo en cero
@@ -449,7 +461,7 @@ bool showSubMenu() {
         }
         selectButtonStartTime = millis(); // Reinicia el temporizador
       }
-      if (digitalRead(buttonMenuPin) == LOW || digitalRead(buttonSelectPin) == LOW) { // Si se presiona el botón de menú o el de selección
+      if (getState(buttonMenuPin) == LOW || getState(buttonSelectPin) == LOW) { // Si se presiona el botón de menú o el de selección
         lcd.print(productCost[menuIndex], 1); // Imprime el costo del producto seleccionado
         delay(200); // Espera 200 milisegundos para evitar múltiples pulsaciones
         break; // Sale del bucle while
@@ -460,11 +472,11 @@ bool showSubMenu() {
     lcd.print("                    "); // Imprime 20 espacios en blanco
 
     while (true) {
-      if (digitalRead(buttonUpPin) == LOW) { // Si se presiona el botón de arriba
+      if (getState(buttonUpPin) == LOW) { // Si se presiona el botón de arriba
         pumpTime[menuIndex] += 5; // Incrementa el tiempo de bombeo del producto seleccionado
         writeInEEPROM(pumpTime[menuIndex], maxMenuItems*(int)2+menuIndex); // Escribe el tiempo de bombeo en la memoria EEPROM
         delay(200); // Espera 200 milisegundos para evitar múltiples pulsaciones
-      } else if (digitalRead(buttonDownPin) == LOW) { // Si se presiona el botón de abajo
+      } else if (getState(buttonDownPin) == LOW) { // Si se presiona el botón de abajo
         pumpTime[menuIndex] -= 5; // Decrementa el tiempo de bombeo del producto seleccionado
         if (pumpTime[menuIndex] <= 0.0){ // Si el tiempo de bombeo es menor o igual a cero
           pumpTime[menuIndex] = 0.0; // Establece el tiempo de bombeo en cero
@@ -489,7 +501,7 @@ bool showSubMenu() {
 
       lcd.setCursor(3, 2); // Establece el cursor en la tercera fila, cuarta columna
       lcd.print(pumpTime[menuIndex], 1); // Imprime el tiempo de bombeo del producto seleccionado
-      if (digitalRead(buttonMenuPin) == LOW || digitalRead(buttonSelectPin) == LOW) { // Si se presiona el botón de menú o el de selección
+      if (getState(buttonMenuPin) == LOW || getState(buttonSelectPin) == LOW) { // Si se presiona el botón de menú o el de selección
         lcd.print(pumpTime[menuIndex], 1); // Imprime el tiempo de bombeo del producto seleccionado
         delay(200); // Espera 200 milisegundos para evitar múltiples pulsaciones
         break; // Sale del bucle while
@@ -676,39 +688,47 @@ void goodBye(){
 void activeOutput(int active, int index){
   if (active == 1){
     if (index == 0){
-      digitalWrite(outputPin, HIGH);  // Enciende la salida del producto 1
+      // digitalWrite(outputPin, HIGH);  // Enciende la salida del producto 1
+      setOutput(outputPin, HIGH);
     }else if(index == 1){
-      digitalWrite(outputPin1, HIGH);  // Enciende la salida del producto 2
+      // digitalWrite(outputPin1, HIGH);  // Enciende la salida del producto 2
+      setOutput(outputPin1, HIGH);
     }else if(index == 2){
-      digitalWrite(outputPin2, HIGH);  // Enciende la salida del producto 3
+      // digitalWrite(outputPin2, HIGH);  // Enciende la salida del producto 3
+      setOutput(outputPin2, HIGH);
     }else if(index == 3){
-      digitalWrite(outputPin3, HIGH);  // Enciende la salida del producto 4
+      // digitalWrite(outputPin3, HIGH);  // Enciende la salida del producto 4
+      setOutput(outputPin3, HIGH);
     }else if(index == 4){
-      digitalWrite(outputPin4, HIGH);  // Enciende la salida del producto 5
+      // digitalWrite(outputPin4, HIGH);  // Enciende la salida del producto 5
+      setOutput(outputPin4, HIGH);
     }else if(index == 5){
-      digitalWrite(outputPin5, HIGH);  // Enciende la salida del producto 6
+      // digitalWrite(outputPin5, HIGH);  // Enciende la salida del producto 6
+      setOutput(outputPin5, HIGH);
     }else if(index == 6){
-      digitalWrite(outputPin6, HIGH);  // Enciende la salida del producto 7
+      // digitalWrite(outputPin6, HIGH);  // Enciende la salida del producto 7
+      setOutput(outputPin6, HIGH);
     }else if(index == 7){
-      digitalWrite(outputPin7, HIGH);  // Enciende la salida del producto 8
+      // digitalWrite(outputPin7, HIGH);  // Enciende la salida del producto 8
+      setOutput(outputPin7, HIGH);
     }
   }else if(active == 0){
     if(index == 0){
-      digitalWrite(outputPin, LOW);  // Apaga la salida del producto 1
+      setOutput(outputPin, LOW);  // Apaga la salida del producto 1
     }else if(index == 1){
-      digitalWrite(outputPin1, LOW);  // Apaga la salida del producto 2
+      setOutput(outputPin1, LOW);  // Apaga la salida del producto 2
     }else if(index == 2){
-      digitalWrite(outputPin2, LOW);  // Apaga la salida del producto 3
+      setOutput(outputPin2, LOW);  // Apaga la salida del producto 3
     }else if(index == 3){
-      digitalWrite(outputPin3, LOW);  // Apaga la salida del producto 4
+      setOutput(outputPin3, LOW);  // Apaga la salida del producto 4
     }else if(index == 4){
-      digitalWrite(outputPin4, LOW);  // Apaga la salida del producto 5
+      setOutput(outputPin4, LOW);  // Apaga la salida del producto 5
     }else if(index == 5){
-      digitalWrite(outputPin5, LOW);  // Apaga la salida del producto 6
+      setOutput(outputPin5, LOW);  // Apaga la salida del producto 6
     }else if(index == 6){
-      digitalWrite(outputPin6, LOW);  // Apaga la salida del producto 7
+      setOutput(outputPin6, LOW);  // Apaga la salida del producto 7
     }else if(index == 7){
-      digitalWrite(outputPin7, LOW);  // Apaga la salida del producto 8
+      setOutput(outputPin7, LOW);  // Apaga la salida del producto 8
     }
   }
 }
@@ -753,4 +773,64 @@ void checkProductInfo(float quantity, float price, float time, int row, int col)
   displayStatus(row, col, condition);
 }
 
+/**
+ * Muestra el estado de la EEPROM en la pantalla.
+ */
+void updateShiftRegister()
+{
+   digitalWrite(latchPin, LOW);
+   shiftOut(dataPin, clockPin, LSBFIRST, leds);
+   digitalWrite(latchPin, HIGH);
+}
 
+/**
+ * Establece el estado de una salida del registro de desplazamiento.
+ * 
+ * @param outputNumber El número de salida del registro de desplazamiento.
+ * @param status El estado de la salida del registro de desplazamiento.
+ */
+void setOutput(int outputNumber, bool status) 
+{
+  if (status) 
+  {
+    bitSet(leds, outputNumber); // Activa la salida
+  } 
+  else 
+  {
+    bitClear(leds, outputNumber); // Desactiva la salida
+  }
+  updateShiftRegister(); // Actualiza el registro de desplazamiento
+}
+
+
+/**
+ * 
+*/
+int estadoEntrada(int id, int estado) { // almacenal el estado del sensor en la variable StateSLAVE[x].val
+    static unsigned char retorno = 0;
+
+    for (unsigned char i = 0; i < 8; i++) {
+      if (estado == 1){
+          retorno |= (0x01 << id);
+      }else {
+          retorno &= (0xFF^(0x01 << id));
+      }
+    }
+    return retorno;
+}
+
+
+/**
+ * 
+*/
+int getState(int pinNumber) {
+  // int estadosActual = 0;
+  static int estados = 0;
+
+  if (shift.update()) { // Si hay un cambio en las entradas
+    for (int i = 0; i < shift.getDataWidth(); i++){
+      estados = estadoEntrada(i, shift.state(i));
+    }
+  }
+  return (0x01&(estados>>pinNumber));
+}

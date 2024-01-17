@@ -1,0 +1,32 @@
+{
+	"folders": [
+		{
+			"path": "../../Matlab_algorithm"
+		},
+		{
+			"name": "Programacion",
+			"path": ".."
+		},
+		{
+			"name": "Algoritmos_vision",
+			"path": "../../Algoritmos_vision"
+		},
+		{
+			"name": "bluerov2_video",
+			"path": "../../bluerov2_video"
+		},
+		{
+			"name": "Maestria_Vision",
+			"path": "../../Maestria_Vision"
+		},
+		{
+			"name": "Latex",
+			"path": "../../Latex"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"xstring": "cpp"
+		}
+	}
+}

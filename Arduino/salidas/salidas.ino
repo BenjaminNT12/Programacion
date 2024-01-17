@@ -38,12 +38,12 @@ void loop()
 //   setOutput(1, false);
 //   delay(500);
 //   setOutput(2, false);
-  for(int i=0; i<8; i++)
-  {
-    setOutput(i, true);
-    delay(500);
-    setOutput(i, false);
-  }
+  // for(int i=0; i<8; i++)
+  // {
+  //   setOutput(i, true);
+  //   delay(500);
+  //   setOutput(i, false);
+  // }
 
 }
 
