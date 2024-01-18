@@ -1,15 +1,15 @@
 // Definición de los pines
-#define BR 32 // Botón derecho
-#define BL 33 // Botón izquierdo
-#define IN1 25 // Estado del motor 1
-#define IN2 26 // Estado del motor 2
-#define ENA 27 // PWM del motor
-#define CHA 14 // Encoder A
-#define Lr1 12 // Home
-#define MAH 34 // Mandar a Home
-#define HOME0 39 // Home 0
-#define reset 36 // Reset
-#define CHB 13 // Encoder B
+#define BR 32       // Botón derecho
+#define BL 33       // Botón izquierdo
+#define IN1 25      // Estado del motor 1
+#define IN2 26      // Estado del motor 2
+#define ENA 27      // PWM del motor
+#define CHA 14      // Encoder A
+#define Lr1 12      // Home
+#define MAH 34      // Mandar a Home
+#define HOME0 39    // Home 0
+#define reset 36    // Reset
+#define CHB 13      // Encoder B
 
 // Variables para el sentido de giro
 int contador0 = 0, contador1 = 1, contador = 0, contador2 = 0, contador3 = 1, contadorH, cont = 0;
@@ -19,8 +19,9 @@ void Interrupt();
 void Interrup();
 
 // Variables para el control del motor
-int spmr = 0; // Velocidad del motor
-float stL, stR; // Estados de los botones izquierdo y derecho
+int spmr = 0;  // Velocidad del motor
+float stL = 0; // Estados de los botones izquierdo y derecho
+float stR = 0; // Estados de los botones izquierdo y derecho
 
 // Variables para la lectura de Home
 long lectura; // Lectura del sensor de Home
@@ -30,7 +31,7 @@ float Voltaje_R2; // Voltaje leído en el sensor
 // Variables para la función Mandar a Home
 bool MaH, RST, HOME; // Estados de los botones Mandar a Home, Reset y Home
 
-// Resto del código...
+// Resto del código
 void setup() {
   // Inicializar la comunicación serial a 115200 baudios
   Serial.begin(115200);
