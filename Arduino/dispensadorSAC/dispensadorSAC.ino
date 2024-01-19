@@ -43,7 +43,6 @@ byte leds = 0;		// Variable to hold the pattern of which LEDs are currently turn
 // Pines para la SALIDA de activacion del rele del hooper
 const int hooper = 38; 
 
-
 #define prod0button buttonDownPin
 #define prod1button buttonUpPin
 #define prod2button buttonMenuPin
@@ -374,7 +373,7 @@ bool showConfigurationMode() {
 void showMenu() {
   lcd.clear(); // Limpia la pantalla LCD
   lcd.setCursor(0, 0);
-  lcd.print("Configurar Produc"); // Imprime el título del menú
+  lcd.print("Configurar Producto"); // Imprime el título del menú
   lcd.setCursor(0, 1);
   lcd.print(menuIndex); // Imprime el índice del producto actual
   lcd.print("-");
@@ -836,3 +835,5 @@ int getState(int pinNumber) {
   }
   return (0x01&(estados>>pinNumber));
 }
+
+
