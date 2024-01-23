@@ -1,9 +1,9 @@
 {
-    "board": "arduino:avr:pro",
-    "sketch": "Arduino/dispensadorSAC/dispensadorSAC.ino",
+    "board": "arduino:avr:mega",
+    "sketch": "Arduino/encoder/encoder.ino",
     "programmer": "avrisp",
-    "configuration": "cpu=16MHzatmega328",
-    "port": "/dev/ttyUSB0",
+    "configuration": "cpu=atmega2560",
+    "port": "/dev/ttyACM0",
     "output": "../ArduinoOutput",
     "includePath": [
         "/home/nicolas/Arduino/libraries/"
