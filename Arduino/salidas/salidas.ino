@@ -42,22 +42,16 @@ void loop()
     digitalWrite(LED_BUILTIN, LOW);   // turn the LED off by making the voltage LOW
     delay(100);   
   }
-//   setOutput(1, true);
-//   setOutput(2, true);
-//   delay(500);
-//   setOutput(1, false);
-//   delay(500);
-//   setOutput(2, false);
-  // for(int i=0; i<8; i++)
-  // {
-  //   setOutput(i, true);
-  //   delay(100);
-  //   setOutput(i, false);
-  // }
-  // digitalWrite(hooper, HIGH);  // turn the LED on (HIGH is the voltage level)
-  // delay(100);                      // wait for a second
-  // digitalWrite(hooper, LOW);   // turn the LED off by making the voltage LOW
-  // delay(100);   
+  for(int i=0; i<8; i++)
+  {
+    setOutput(i, true);
+    delay(100);
+    setOutput(i, false);
+  }
+  digitalWrite(hooper, HIGH);  // turn the LED on (HIGH is the voltage level)
+  delay(100);                      // wait for a second
+  digitalWrite(hooper, LOW);   // turn the LED off by making the voltage LOW
+  delay(100);   
 }
 
 /*
