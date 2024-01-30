@@ -66,7 +66,7 @@ float productCost[maxMenuItems] = {0.0}; // Costo del producto
 float pumpTime[maxMenuItems] = {0.0}; // Tiempo de dispensado del producto
 // bool saveVal[] = false;
 
-const int tiempo = 400;
+const int tiempo = 200;
 // const int t = 100;
 
 // Texto para cada elemento del menú
@@ -81,62 +81,107 @@ String menuItems[] = {
   "Zote"
 };
 
-byte customChar[] = {
-  B00001,
-  B00011,
-  B00010,
+
+byte cactus11[8]={
+  B00000,
+  B00000,
+  B00000,
+  B00000,
+  B00000,
+  B00000,
   B00110,
-  B10100,
-  B11100,
-  B01000,
-  B00000
+  B00110
 };
 
-// Crea un carácter personalizado para el dinosaurio
-byte dinosaur[8] = {
+byte cactus12[8]={
   B00000,
-  B00000,
-  B01100,
-  B01110,
-  B00110,
-  B01100,
+  B10000,
   B11000,
+  B11000,
+  B11000,
+  B11001,
+  B11011,
+  B11011
+};
+
+byte cactus21[8]={
+  B00110,
+  B00110,
+  B00011,
+  B00011,
+  B00000,
+  B00000,
+  B00000,
   B00000
 };
 
+byte cactus22[8]={
+  B11011,
+  B11110,
+  B11110,
+  B11000,
+  B11000,
+  B11000,
+  B11000,
+  B11000
+};
 
+byte cactusMini11[8]={
+  B00001,
+  B00101,
+  B00101,
+  B00111,
+  B00011,
+  B00001,
+  B00001,
+  B00001
+};
 
+byte cactusMini12[8]={
+  B01000,
+  B01000,
+  B01000,
+  B11000,
+  B10000,
+  B00000,
+  B00000,
+  B00000
+};
+
+// posicion 1,1
 byte chardino1[8] = {
   B00000,
   B00000,
   B00000,
   B00000,
-  B00000,
-  B00000,
-  B00000,
+  B10000,
+  B11000,
+  B11000,
   B11100
 };
-
+// posicion 1,2
 byte chardino2[8] = {
   B00000,
-  B00000,
-  B00000,
-  B00000,
-  B00000,
-  B00000,
-  B00000,
+  B00001,
+  B00001,
+  B00001,
+  B00001,
+  B00011,
+  B01111,
   B11111
 };
+// posicion 1,3
 byte chardino3[8] = {
-  B00000,
-  B00000,
-  B00000,
-  B00000,
-  B00000,
-  B00000,
-  B00000,
+  B11111,
+  B10111,
+  B11111,
+  B11111,
+  B11100,
+  B11111,
+  B11100,
   B11100
 };
+// posicion 1,4
 byte chardino4[8] = {
   B10000,
   B11000,
@@ -147,6 +192,8 @@ byte chardino4[8] = {
   B00000,
   B00000
 };
+
+// posicion 2,1
 byte chardino5[8] = {
   B11111,
   B11111,
@@ -157,6 +204,7 @@ byte chardino5[8] = {
   B00010,
   B00011
 };
+// posicion 2,2
 byte chardino6[8] = {
   B11111,
   B11111,
@@ -167,8 +215,8 @@ byte chardino6[8] = {
   B00010,
   B00011
 };
-
-byte chardino7[8] = {
+// posicion 2,3
+byte chardino7T[8] = {
   B11111,
   B11001,
   B10000,
@@ -179,7 +227,62 @@ byte chardino7[8] = {
   B00000
 };
 
+// Pie trasero arriba
+// posicion 2,1
+byte chardino5T[8] = {
+  B11111,
+  B11111,
+  B01111,
+  B00111,
+  B00011,
+  B00011,
+  B00000,
+  B00000
+};
 
+byte chardino6T[8] = {
+  B11111,
+  B11111,
+  B11111,
+  B11111,
+  B00110,
+  B10010,
+  B00010,
+  B00011
+};
+// posicion 2,1
+byte chardino5D[8] = {
+  B11111,
+  B11111,
+  B01111,
+  B00111,
+  B00011,
+  B00011,
+  B00010,
+  B00011
+};
+// posicion 2,2
+byte chardino6D[8] = {
+  B11111,
+  B11111,
+  B11111,
+  B11111,
+  B10110,
+  B00011,
+  B00000,
+  B00000
+};
+// posicion 2,3
+byte chardino7D[8] = {
+  B11111,
+  B11001,
+  B10000,
+  B00000,
+  B00000,
+  B10000,
+  B00000,
+  B00000
+};
 // Variables para el desplazamiento del mensaje
 char message[] = "Dispensador..."; // Mensaje de desplazamiento
 int messageLength = sizeof(message) - 1; // Longitud del mensaje sin el carácter nulo
@@ -193,14 +296,16 @@ unsigned long startTime = 0; // Tiempo de inicio de la dispensación
 // Declaración de funciones
 void costOfProduct(const char*, int index);
 void displayProgressBar(int percent);
+void dinoCaminar(int pos);
 
 void setup() {
   Serial.begin(115200); // Inicializa la comunicación serial a 115200 baudios
   shift.begin(10, 9, 11, 12);
   lcd.init(); // Inicializa la pantalla LCD
   lcd.backlight(); // Enciende la luz de fondo de la pantalla LCD
-  lcd.createChar(0, customChar); // Crea un carácter personalizado en la posición 0 del conjunto de caracteres
-  lcd.createChar(1, dinosaur); // Crea el carácter personalizado
+  // lcd.createChar(0, customChar); // Crea un carácter personalizado en la posición 0 del conjunto de caracteres
+  // lcd.createChar(1, dinosaur); // Crea el carácter personalizado
+
   // lcd.write((byte)0);
   // Mostrar el custom char en la pantalla
 
@@ -358,7 +463,8 @@ void loop() {
   }
  // si el contador pasa de 10000 que se muestre el dinosaurio
   if (startTime > 1000UL){
-    desplazar_dino();
+    // desplazar_dino();
+    dinoCaminar(1);
   }
 }
 
@@ -993,42 +1099,78 @@ int getState(int pinNumber) {
 }
 
 
+void dinoPieTraseroArriba(int pos){
+  lcd.createChar(5,chardino5T);
+  lcd.createChar(6,chardino6T);
+  lcd.createChar(7,chardino7T);
+  lcd.setCursor(0+pos, 2); lcd.write(1);
+  lcd.setCursor(1+pos, 2); lcd.write(2);
+  lcd.setCursor(2+pos, 2); lcd.write(3);
+  lcd.setCursor(3+pos, 2); lcd.write(4);
+  lcd.setCursor(0+pos, 3); lcd.write(5);
+  lcd.setCursor(1+pos, 3); lcd.write(6);
+  lcd.setCursor(2+pos, 3); lcd.write(7);
+  delay(tiempo);
+  lcd.clear();
+}
 
-void desplazar_dino()
- {lcd.createChar(1,chardino1);
+void dinoPieDelanteroArriba(int pos){
+  lcd.createChar(1,chardino1);
+  lcd.createChar(2,chardino2);
+  lcd.createChar(3,chardino3);
+  lcd.createChar(4,chardino4);
+  lcd.createChar(5,chardino5D);
+  lcd.createChar(6,chardino6D);
+  lcd.createChar(7,chardino7D);
+  lcd.setCursor(0+pos, 2); lcd.write(1);
+  lcd.setCursor(1+pos, 2); lcd.write(2);
+  lcd.setCursor(2+pos, 2); lcd.write(3);
+  lcd.setCursor(3+pos, 2); lcd.write(4);
+  lcd.setCursor(0+pos, 3); lcd.write(5);
+  lcd.setCursor(1+pos, 3); lcd.write(6);
+  lcd.setCursor(2+pos, 3); lcd.write(7);
+  delay(tiempo);
+  lcd.clear();
+}
+
+void dinoAmbosPies(int posV = 1, int posH = 0){
+  lcd.createChar(1,chardino1);
   lcd.createChar(2,chardino2);
   lcd.createChar(3,chardino3);
   lcd.createChar(4,chardino4);
   lcd.createChar(5,chardino5);
   lcd.createChar(6,chardino6);
-  lcd.createChar(7,chardino7);
-  for (int a=0; a<=18; a++)
-  {
+  lcd.createChar(7,chardino7T);
+  lcd.setCursor(0+posV, 2-posH); lcd.write(1);
+  lcd.setCursor(1+posV, 2-posH); lcd.write(2);
+  lcd.setCursor(2+posV, 2-posH); lcd.write(3);
+  lcd.setCursor(3+posV, 2-posH); lcd.write(4);
+  lcd.setCursor(0+posV, 3-posH); lcd.write(5);
+  lcd.setCursor(1+posV, 3-posH); lcd.write(6);
+  lcd.setCursor(2+posV, 3-posH); lcd.write(7);
+  delay(150);
+  lcd.clear();
 
+}
 
-  if(a>=3){
-  lcd.setCursor(a-3,0);
-  lcd.write(1);}
-  if(a>=2)
-  {lcd.setCursor(a-2,0);
-  lcd.write(2);}
-  if(a>=1)
-  {lcd.setCursor(a-1,0);
-  lcd.write(3);}
-  lcd.setCursor(a,0);
-  lcd.write(4);
-  
-  if(a>=3){
-  lcd.setCursor(a-3,1);
-  lcd.write(5);}
-  if(a>=2){
-  lcd.setCursor(a-2,1);
-  lcd.write(6);}
-  if(a>=1){
-  lcd.setCursor(a-1,1);
-  lcd.write(7);}
-  
+void cactus(int pos){
+  lcd.createChar(1,cactus11);
+  lcd.createChar(2,cactus12);
+  lcd.createChar(3,cactus21);
+  lcd.createChar(4,cactus22);
+  lcd.setCursor(0+pos, 2); lcd.write(1);
+  lcd.setCursor(1+pos, 2); lcd.write(2);
+  lcd.setCursor(0+pos, 3); lcd.write(3);
+  lcd.setCursor(1+pos, 4); lcd.write(4);
   delay(tiempo);
-    lcd.clear();
- }
+  lcd.clear();
+
+}
+
+void dinoCaminar(int pos = 1){
+  // cactus(10);
+  dinoPieDelanteroArriba(pos);
+  dinoPieTraseroArriba(pos);
+  // dinoAmbosPies(pos, 1);
+  // dinoAmbosPies(pos, 2);
 }
