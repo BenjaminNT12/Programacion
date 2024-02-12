@@ -3,7 +3,7 @@
     "sketch": "Arduino/dispensadorSAC/dispensadorSAC.ino",
     "programmer": "avrisp",
     "configuration": "cpu=16MHzatmega328",
-    "port": "/dev/ttyUSB1",
+    "port": "/dev/ttyUSB0",
     "output": "../ArduinoOutput",
     "includePath": [
         "/home/nicolas/Arduino/libraries/"

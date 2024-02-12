@@ -1284,8 +1284,8 @@ void dinoAvanzar(unsigned long intervalo) {
 bool dinoSaltarHigh() {
   static unsigned int temporizador1 = 0;
   static unsigned int temporizador2 = 0;
-  const int intervalo1 = 1;
-  const int intervalo2 = 6;
+  const int intervalo1 = 2;
+  const int intervalo2 = 5;
 
   if(temporizador1 == 0){
     lcd.clear();
@@ -1486,7 +1486,6 @@ void evacionObstaculos2(){
   static unsigned long lastChange2 = 0;
   unsigned long currentTime2 = millis();
   static bool saltando = false;
-  static bool dobleAltura = false;
   static bool sAlto = false;
   static bool sBajo = false;
   char scoreHiStr[5]; // Buffer for the high score
@@ -1517,7 +1516,7 @@ void evacionObstaculos2(){
       ultimoMovimiento = tiempoActual;
       caracteres[0] = random(33, 127);
       if (random(2) == 0) { // Genera un número aleatorio 0 o 1
-        dobleAltura = true; 
+        sAlto = true; 
       }
     }else{
       caracteres[0] = 0x20;
@@ -1526,54 +1525,46 @@ void evacionObstaculos2(){
 
     if (saltando == true){
       for (int i = 0; i < 20; i++){
-        if(dobleAltura == true){
-          dobleAltura = false;
+        if(sAlto == true){
+          sAlto = false;
           caracteres2[i] = caracteres[i];
           caracteres[i] = 0x20;
         }
-        if (i < 15){
-          lcd.setCursor(19-i, 2); // Posiciona el cursor en la columna más a la derecha de la línea inferior
-          lcd.write(caracteres2[i]); // Escribe el caracter en el LCD
-        }else if(sAlto == true){
+        lcd.setCursor(19-i, 3); // Posiciona el cursor en la columna más a la derecha de la línea inferior
+        lcd.write(caracteres[i]); // Escribe el caracter en el LCD
+        if (caracteres2[i] != 0x20){
           lcd.setCursor(19-i, 2); // Posiciona el cursor en la columna más a la derecha de la línea inferior
           lcd.write(caracteres2[i]); // Escribe el caracter en el LCD
         }
-        lcd.setCursor(19-i, 3); // Posiciona el cursor en la columna más a la derecha de la línea inferior
-        lcd.write(caracteres[i]); // Escribe el caracter en el LCD
-
       }
       Serial.println("Saltando");
     }else if(saltando == false){
       for (int i = 0; i < 16; i++){
-        if(dobleAltura == true){
-          dobleAltura = false;
+        if(sAlto == true){
+          sAlto = false;
           caracteres2[i] = caracteres[i];
           caracteres[i] = 0x20;
-        }if (i < 15){
+        }
+        lcd.setCursor(19-i, 3); // Posiciona el cursor en la columna más a la derecha de la línea inferior
+        lcd.write(caracteres[i]); // Escribe el caracter en el LCD
+        if(i < 15){
           lcd.setCursor(19-i, 2); // Posiciona el cursor en la columna más a la derecha de la línea inferior
           lcd.write(caracteres2[i]); // Escribe el caracter en el LCD
         }
-        
-        lcd.setCursor(19-i, 3); // Posiciona el cursor en la columna más a la derecha de la línea inferior
-        lcd.write(caracteres[i]); // Escribe el caracter en el LCD
       }
     }
   }
-  if(caracteres[16] != 0x20 && sBajo == false){
+  if(caracteres[16] != 0x20){
     saltando = dinoSaltarObstaculo(2);
-    Serial.println("Obstaculo detectado Bajo");
+    Serial.println("Obstaculo detectado");
     score++;
-    sBajo = saltando;
-  }else if(caracteres2[15] != 0x20 && sAlto == false){
+  }else if(caracteres2[15] != 0x20){
     saltando = dinoSaltarObstaculo(1);
-    Serial.println("Obstaculo detectado Alto");
+    Serial.println("Obstaculo detectado");
     score++;
-    sAlto = saltando;
+    saltando = dinoSaltarObstaculo(0);
   }else{
     saltando = dinoSaltarObstaculo(0);
-    sAlto = false;
-    sBajo = false;
-    Serial.println("Obstaculo No detectado");
   }
 
   lcd.setCursor(6, 0);
@@ -1583,11 +1574,5 @@ void evacionObstaculos2(){
   lcd.print("  ");
   sprintf(scoreStr, "%04d", score); // Format the score with leading zeros
   lcd.print(scoreStr);
-  if(sAlto == true){
-    Serial.println("Salto alto");
-  }
-  if(sBajo == true){
-    Serial.println("Salto bajo");
-  }
 }
 
