@@ -67,6 +67,64 @@ float pumpTime[maxMenuItems] = {0.0}; // Tiempo de dispensado del producto
 
 const int VELOCIDAD_JUEGO = 100;
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+// Definiciones de los tipos de obstáculos
+enum ObstaculoTipo {
+  OBSTACULO_SIMPLE,
+  OBSTACULO_ALTO
+};
+
+// Estructura para representar un obstáculo
+struct Obstaculo {
+  ObstaculoTipo tipo;
+  int posicion;
+};
+
+// Variables globales
+// LiquidCrystal lcd(PIN_LCD_RS, PIN_LCD_E, PIN_LCD_D4, PIN_LCD_D5, PIN_LCD_D6, PIN_LCD_D7);
+unsigned long tiempoActual;
+unsigned long lastChange2;
+unsigned long VELOCIDAD_JUEGO = 50;
+char caracteres[logitudLCDH * logitudLCDV];
+char caracteres2[logitudLCDH * logitudLCDV];
+bool saltando = false;
+bool dobleAltura = false;
+bool sAlto = false;
+bool sBajo = false;
+int score = 0;
+int scoreHi = 0;
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 // Texto para cada elemento del menú
 String menuItems[] = {
   "Cloralex",
@@ -1590,4 +1648,156 @@ void evacionObstaculos2(){
     Serial.println("Salto bajo");
   }
 }
+
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+// Función para generar un obstáculo aleatorio
+Obstaculo generarObstaculo() {
+  Obstaculo obstaculo;
+  obstaculo.tipo = (random(2) == 0) ? OBSTACULO_SIMPLE : OBSTACULO_ALTO;
+  obstaculo.posicion = logitudLCDH - 1;
+  return obstaculo;
+}
+
+// Función para mover los obstáculos
+void moverObstaculos() {
+  for (int i = 0; i < logitudLCDH * logitudLCDV; i++) {
+    caracteres[i] = caracteres2[i];
+    caracteres2[i] = 0x20;
+  }
+
+  for (int i = 0; i < logitudLCDH; i++) {
+    if (caracteres[i] != 0x20) {
+      caracteres[i] = caracteres[i - 1];
+    }
+  }
+}
+
+// Función para dibujar los obstáculos
+void dibujarObstaculos(Obstaculo obstaculo1, Obstaculo obstaculo2) {
+  for (int i = 0; i < logitudLCDH; i++) {
+    if (obstaculo1.posicion == i) {
+      if (obstaculo1.tipo == OBSTACULO_SIMPLE) {
+        caracteres2[i] = 0x5B; // '['
+      } else {
+        caracteres2[i] = 0x7C; // '|'
+      }
+    } else if (obstaculo2.posicion == i) {
+      caracteres2[i] = 0x7C; // '|'
+    }
+  }
+}
+
+// Función para calcular la altura del salto
+int calcularAlturaSalto(Obstaculo obstaculo) {
+  if (obstaculo.tipo == OBSTACULO_SIMPLE) {
+    return 1;
+  } else {
+    return (sAlto || sBajo) ? 0 : 2;
+  }
+}
+
+// Función para controlar el salto del dinosaurio
+void controlarSalto(Obstaculo obstaculo1, Obstaculo obstaculo2) {
+  int alturaSalto = calcularAlturaSalto(obstaculo1);
+
+  if (saltando == true) {
+    for (int i = 0; i < logitudLCDH * logitudLCDV; i++) {
+      if (dobleAltura == true) {
+        dobleAltura = false;
+        caracteres2[i] = caracteres[i];
+        caracteres[i] = 0x20;
+      }
+      if (i < (logitudLCDH - 1) * (alturaSalto - 1)) {
+        lcd.setCursor(19-i, 2); // Posiciona el cursor en la columna más a la derecha de la línea inferior
+        lcd.write(caracteres2[i]); // Escribe el caracter en el LCD
+      } else if (i < (logitudLCDH - 1) * alturaSalto) {
+        lcd.setCursor(19-i, 3); // Posiciona el cursor en la columna más a la derecha de la línea inferior
+        lcd.write(caracteres[i]); // Escribe el caracter en el LCD
+      }
+    }
+  } else {
+    for (int i = 0; i < logitudLCDH * logitudLCDV; i++) {
+      if (dobleAltura == true) {
+        dobleAltura = false;
+        caracteres2[i] = caracteres[i];
+        caracteres[i] = 0x20;
+      }
+      if (i < (logitudLCDH - 1)) {
+        lcd.setCursor(19-i, 3); // Posiciona el cursor en la columna más a la derecha de la línea inferior
+        lcd.write(caracteres[i]); // Escribe el caracter en el LCD
+      }
+    }
+  }
+
+  if (caracteres[16] != 0x20 && sBajo == false) {
+    saltando = dinoSaltarObstaculo(2);
+    Serial.println("Obstaculo detectado Bajo");
+    score++;
+    sBajo = saltando;
+  } else if (caracteres2[15] != 0x20 && sAlto == false) {
+    saltando = dinoSaltarObstaculo(1);
+    Serial.println("Obstaculo detectado Alto");
+    score++;
+    sAlto = saltando;
+  } else {
+    saltando = dinoSaltarObstaculo(0);
+    sAlto = false;
+    sBajo = false;
+    Serial.println("Obstaculo No detectado");
+  }
+}
+
+// Función para actualizar la puntuación
+void actualizarPuntuacion() {
+  if (score > scoreHi) {
+    scoreHi = score;
+  }
+
+  lcd.setCursor(6, 0);
+  lcd.print("Hi: ");
+  sprintf(scoreHiStr, "%04d", scoreHi); 
+  lcd.print(scoreHiStr);
+  lcd.print("  ");
+  sprintf(scoreStr, "%04d", score); // Format the score with leading zeros
+  lcd.print(scoreStr);
+}
+
+// Función principal del juego
+void evacionObstaculos3() {
+  static Obstaculo obstaculo1 = generarObstaculo();
+  static Obstaculo obstaculo2 = generarObstaculo();
+  static unsigned long lastChange = 0;
+  unsigned long currentTime = millis();
+
+  if (currentTime - lastChange >= VELOCIDAD_JUEGO) {
+    lastChange = currentTime;
+
+    moverObstaculos();
+    dibujarObstaculos(obstaculo1, obstaculo2);
+    controlarSalto(obstaculo1, obstaculo2);
+    actualizarPuntuacion();
+
+    if (obstaculo1.posicion == 0) {
+      obstaculo1 = generarObstaculo();
+    }
+    if (obstaculo2.posicion == 0) {
+      obstaculo2 = generarObstaculo();
+    }
+  }
+}
+
 
