@@ -1285,7 +1285,7 @@ bool dinoSaltarHigh() {
   static unsigned int temporizador1 = 0;
   static unsigned int temporizador2 = 0;
   const int intervalo1 = 1;
-  const int intervalo2 = 6;
+  const int intervalo2 = 3;
 
   if(temporizador1 == 0){
     lcd.clear();
