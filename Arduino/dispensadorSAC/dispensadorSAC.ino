@@ -9,7 +9,7 @@ ShiftIn<2> shift;
 const int LCD_WIDTH = 20;
 const int LCD_HEIGHT = 4;
 LiquidCrystal_I2C lcd(0x27, LCD_WIDTH, LCD_HEIGHT);
-const unsigned long TIEMPO_ESPERA_REPOSO = 20000;
+const unsigned long TIEMPO_ESPERA_REPOSO = 300;
 
 // Pines para los botones
 const int BUTTON_DOWN_PIN = 0;
@@ -127,11 +127,6 @@ void setup() {
   shift.begin(10, 9, 11, 12);
   lcd.init(); // Inicializa la pantalla LCD
   lcd.backlight(); // Enciende la luz de fondo de la pantalla LCD
-  // lcd.createChar(0, customChar); // Crea un carácter personalizado en la posición 0 del conjunto de caracteres
-  // lcd.createChar(1, dinosaur); // Crea el carácter personalizado
-
-  // lcd.write((byte)0);
-  // Mostrar el custom char en la pantalla
 
   pinMode(BUTTON_UP_PIN, INPUT_PULLUP); // Configura el pin del botón de subida como entrada con resistencia pull-up
   pinMode(BUTTON_DOWN_PIN, INPUT_PULLUP); // Configura el pin del botón de bajada como entrada con resistencia pull-up
@@ -184,6 +179,10 @@ void loop() {
   static bool showOneTime = false; // Variable booleana estática para indicar si se ha mostrado el crédito del usuario
   static bool change = false; // Variable booleana estática para indicar si se ha mostrado el crédito del usuario
   static bool credit = false; // Variable booleana estática para indicar si el crédito del usuario es suficiente para comprar un producto
+  static unsigned long startTime = millis();
+  static unsigned long lastPrintedTime = 0;
+  unsigned long currentTime = (millis() - startTime) / 1000;
+
 
 
   if (getState(BUTTON_MENU_PIN) == 1 && getState(BUTTON_SELECT_PIN) == 1) { // Si se presionan los botones de menú y selección al mismo tiempo
@@ -349,12 +348,14 @@ void loop() {
     }
     Serial.println("entro en la condicion 12");
   }
-//  // si el contador pasa de 10000 que se muestre el dinosaurio
-  if (startTime > TIEMPO_ESPERA_REPOSO){
-    evacionObstaculos2();
-  }else{
-    startTime++;
-    Serial.print("StartTime: ");Serial.println(startTime);
+
+  if (millis() - startTime > TIEMPO_ESPERA_REPOSO * 1000) {
+      evacionObstaculos2();
+  } else {
+      if (currentTime != lastPrintedTime) {
+          lastPrintedTime = currentTime;
+          Serial.print("StartTime: "); Serial.println(currentTime);
+      }
   }
 }
 
