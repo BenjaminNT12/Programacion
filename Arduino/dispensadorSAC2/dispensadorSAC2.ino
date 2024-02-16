@@ -2,17 +2,16 @@
 #include <LiquidCrystal_I2C.h> // Biblioteca para controlar la pantalla LCD
 #include <EEPROM.h> // Biblioteca para acceder a la memoria EEPROM
 #include <ShiftIn.h>
-#include "game.h" // Biblioteca para el juego del dinosaurio
 
 ShiftIn<2> shift;
 
 // Conexión de la pantalla LCD
-extern const int LCD_WIDTH;
-extern const int LCD_HEIGHT;
+const int LCD_WIDTH = 20;
+const int LCD_HEIGHT = 4;
 LiquidCrystal_I2C lcd(0x27, LCD_WIDTH, LCD_HEIGHT);
 
-const unsigned long TUTORIAL_WAIT_TIME = 5;
-const unsigned long DYNO_GAME_WAIT_TIME = 10;
+const unsigned long TIEMPO_ESPERA_TUTORIAL = 5;
+const unsigned long TIEMPO_ESPERA_DYNO_GAME = 10;
 
 // Pines para los botones
 const int BUTTON_DOWN_PIN = 0;
@@ -49,7 +48,9 @@ byte leds = 0;		// Variable to hold the pattern of which LEDs are currently turn
 // Pines para la SALIDA de activacion del rele del HOOPER_PIN
 const int HOOPER_PIN = 38; 
 
-
+#define SALTO_HIGH 1
+#define SALTO_LOW 2
+#define SALTO_NULL 0
 
 #define PROD0_BUTTON BUTTON_DOWN_PIN
 #define PROD1_BUTTON BUTTON_UP_PIN
@@ -60,20 +61,18 @@ const int HOOPER_PIN = 38;
 #define PROD6_BUTTON BUTTON_PRODUCT3_PIN
 #define PROD7_BUTTON BUTTON_PRODUCT4_PIN
 
-#define ACTIVATE_HOOPER_OUTPUT HOOPER_PIN
-#define COIN_OUTPUT HOOPER_OUTPUT_PIN
-// #define COIN_OUTPUT BUTTON_PRODUCT1_PIN
+#define activaHooperSALIDA HOOPER_PIN
+#define salidaDeMONEDAS HOOPER_OUTPUT_PIN
+// #define salidaDeMONEDAS BUTTON_PRODUCT1_PIN
 // Variables para el menú
 int menuIndex = 0; // Índice del elemento del menú actual
 const int MAX_MENU_ITEMS = 8; // Número total de elementos del menú
-const int PROD_BUTTONS[MAX_MENU_ITEMS] = {PROD0_BUTTON, PROD1_BUTTON, PROD2_BUTTON, PROD3_BUTTON, PROD4_BUTTON, PROD5_BUTTON, PROD6_BUTTON, PROD7_BUTTON};
-
 
 float productQuantity[MAX_MENU_ITEMS] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}; // Cantidad de producto a dispensar en litros
 float productCost[MAX_MENU_ITEMS] = {10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0}; // Costo del producto
 float pumpTime[MAX_MENU_ITEMS] = {5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0}; // Tiempo de dispensado del producto
 
-
+const int VELOCIDAD_JUEGO = 50;
 
 // Texto para cada elemento del menú
 String menuItems[] = {
@@ -88,17 +87,35 @@ String menuItems[] = {
 };
 
 
+// byte CACTUS_11[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x06};
+// byte CACTUS_12[8] = {0x00, 0x10, 0x18, 0x18, 0x18, 0x19, 0x1B, 0x1B};
+// byte CACTUS_21[8] = {0x06, 0x06, 0x03, 0x03, 0x00, 0x00, 0x00, 0x00};
+// byte CACTUS_22[8] = {0x1B, 0x1E, 0x1E, 0x18, 0x18, 0x18, 0x18, 0x18};
+// byte CACTUS_MINI_11[8] = {0x01, 0x05, 0x05, 0x07, 0x03, 0x01, 0x01, 0x01};
+// byte CACTUS_MINI_12[8] = {0x08, 0x08, 0x08, 0x18, 0x10, 0x00, 0x00, 0x00};
+byte CHARDINO_1[8] = {0x00, 0x00, 0x00, 0x00, 0x10, 0x18, 0x18, 0x1C};
+byte CHARDINO_2[8] = {0x00, 0x01, 0x01, 0x01, 0x01, 0x03, 0x0F, 0x1F};
+byte CHARDINO_3[8] = {0x1F, 0x17, 0x1F, 0x1F, 0x1C, 0x1F, 0x1C, 0x1C};
+byte CHARDINO_4[8] = {0x10, 0x18, 0x18, 0x18, 0x00, 0x10, 0x00, 0x00};
+byte CHARDINO_5[8] = {0x1F, 0x1F, 0x0F, 0x07, 0x03, 0x03, 0x02, 0x03};
+byte CHARDINO_6[8] = {0x1F, 0x1F, 0x1F, 0x1F, 0x16, 0x02, 0x02, 0x03};
+byte CHARDINO_6T[8] = {0x1F, 0x1F, 0x1F, 0x1F, 0x06, 0x12, 0x02, 0x03};
+byte CHARDINO_5T[8] = {0x1F, 0x1F, 0x0F, 0x07, 0x03, 0x03, 0x00, 0x00};
+byte CHARDINO_7T[8] = {0x1F, 0x19, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00};
+byte CHARDINO_5D[8] = {0x1F, 0x1F, 0x0F, 0x07, 0x03, 0x03, 0x02, 0x03};
+byte CHARDINO_6D[8] = {0x1F, 0x1F, 0x1F, 0x1F, 0x16, 0x03, 0x00, 0x00};
+byte CHARDINO_7D[8] = {0x1F, 0x19, 0x10, 0x00, 0x00, 0x10, 0x00, 0x00};
 
-const char message1[] PROGMEM = "Bienvenidos";
-const char message2[] PROGMEM = "1: Deposite sus monedas. ";
-const char message3[] PROGMEM = "2: Coloque su envase . ";
-const char message4[] PROGMEM = "3: Presione el boton . ";
+const char mensaje1[] PROGMEM = "Bienvenidos";
+const char mensaje2[] PROGMEM = "1: Deposite sus monedas. ";
+const char mensaje3[] PROGMEM = "2: Coloque su envase . ";
+const char mensaje4[] PROGMEM = "3: Presione el boton . ";
 
-const char* const tutorialMessages[] PROGMEM = {
-  message1,
-  message2,
-  message3,
-  message4
+const char* const mensajesTutorial[] PROGMEM = {
+  mensaje1,
+  mensaje2,
+  mensaje3,
+  mensaje4
 };
 
 // Variables para el desplazamiento del mensaje
@@ -107,20 +124,12 @@ int messageLength = sizeof(message) - 1; // Longitud del mensaje sin el carácte
 int scrollPosition = 0; // Posición actual del desplazamiento
 unsigned long scrollDelay = 100; // Retardo entre cada paso del desplazamiento
 float totalCredit = 0.0; // Variable para el crédito total acumulado
-bool service = false; // Variable para el crédito total acumulado
+bool servicio = false; // Variable para el crédito total acumulado
 unsigned long startTime = millis(); // Tiempo de inicio de la dispensación
 char ledState = 0x1; // Variable booleana para el estado del LED incorporado
 int score = 0;  
 int scoreHi = 0;
 bool firstRun = true;
-
-
-bool configurationMode = false; // Variable booleana estática para indicar si el dispositivo está en modo de configuración
-bool welcomeMessage = false; // Variable booleana estática para indicar si se ha mostrado el mensaje de bienvenida
-bool showOneTime = false; // Variable booleana estática para indicar si se ha mostrado el crédito del usuario
-bool change = false; // Variable booleana estática para indicar si se ha mostrado el crédito del usuario
-bool credit = false; // Variable booleana estática para indicar si el crédito del usuario es suficiente para comprar un 
-bool tutorialShow = false; // Variable booleana estática para indicar si se ha mostrado el tutorial
 
 // Declaración de funciones
 void costOfProduct(const char*, int index);
@@ -179,128 +188,212 @@ void setup() {
 
 
 void loop() {
+
+  static bool configurationMode = false; // Variable booleana estática para indicar si el dispositivo está en modo de configuración
+  static bool welcomeMessage = false; // Variable booleana estática para indicar si se ha mostrado el mensaje de bienvenida
+  static bool showOneTime = false; // Variable booleana estática para indicar si se ha mostrado el crédito del usuario
+  static bool change = false; // Variable booleana estática para indicar si se ha mostrado el crédito del usuario
+  static bool credit = false; // Variable booleana estática para indicar si el crédito del usuario es suficiente para comprar un producto
+  static unsigned long startTime = millis();
   static unsigned long lastPrintedTime = 0;
   unsigned long currentTime = (millis() - startTime) / 1000;
+  static bool tutorialShow = false; // Variable booleana estática para indicar si se ha mostrado el tutorial
   static bool dynoGameShow = false; // Variable booleana estática para indicar si se ha mostrado el juego del dinosaurio
 
-  handleButtons(); // Maneja los botones
-  handleTimeEvents(currentTime, lastPrintedTime, startTime);
-}
-
-bool hasTimeElapsed(unsigned long startTime, int waitTimeInSeconds) {
-    return millis() - startTime > waitTimeInSeconds * 1000;
-}
-
-void handleTimeEvents(unsigned long currentTime, unsigned long lastPrintedTime, unsigned long startTime) {
-    if (hasTimeElapsed(startTime, DYNO_GAME_WAIT_TIME)) {
-        tutorialShow = true;
-        Serial.println("entro en la funcion dynoGame");
-        dynoGame();
-    } else if (hasTimeElapsed(startTime, TUTORIAL_WAIT_TIME) && !tutorialShow) {
-        Serial.println("entro en la funcion mostrar mostrarTutorialLCD");
-        mostrarTutorialLCD();
-    } else if (currentTime != lastPrintedTime) {
-        lastPrintedTime = currentTime;
-        Serial.print("StartTime: "); Serial.println(currentTime);
-    }
-}
 
 
-void enterConfigurationMode() {
-  configurationMode = true; // El dispositivo entra en modo de configuración
-  showMenu(); // Muestra el menú en la pantalla LCD
-  Serial.println("delay(1000)");
-  delay(1000); // Espera 1 segundo
-  while(getState(BUTTON_MENU_PIN) == 1 || getState(BUTTON_SELECT_PIN) == 1){;} // Espera hasta que se suelten los botones de menú y selección
-  while (configurationMode) { // Mientras el dispositivo esté en modo de configuración
-    showConfigurationMode(); // Muestra el modo de configuración en la pantalla LCD
-    if (getState(BUTTON_MENU_PIN) == 1) { // Si se presiona el botón de menú
-      configurationMode = false; // El dispositivo sale del modo de configuración
-      welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
-      Serial.println("delay(200)");
-      delay(200); // Espera 200 milisegundos
-      break; // Sale del bucle while
-    }
+  // if (getState(BUTTON_MENU_PIN) == 1 && getState(BUTTON_SELECT_PIN) == 1) { // Si se presionan los botones de menú y selección al mismo tiempo
+  //   configurationMode = true; // El dispositivo entra en modo de configuración
+  //   showMenu(); // Muestra el menú en la pantalla LCD
+  //   Serial.println("delay(1000)");delay(1000);; // Espera 1 segundo
+  //   while(getState(BUTTON_MENU_PIN) == 1 || getState(BUTTON_SELECT_PIN) == 1){;} // Espera hasta que se suelten los botones de menú y selección
+  //   while (configurationMode) { // Mientras el dispositivo esté en modo de configuración
+  //     showConfigurationMode(); // Muestra el modo de configuración en la pantalla LCD
+  //     if (getState(BUTTON_MENU_PIN) == 1) { // Si se presiona el botón de menú
+  //       configurationMode = false; // El dispositivo sale del modo de configuración
+  //       welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
+  //       Serial.println("delay(200)");delay(200);; // Espera 200 milisegundos
+  //       break; // Sale del bucle while
+  //     }
+  //   }
+  //   Serial.println("entro en la condicion 1");
+  // } else if (configurationMode == false && welcomeMessage == false && credit == false) { // Si el dispositivo no está en modo de configuración, no se ha mostrado el mensaje de bienvenida y el crédito del usuario no es suficiente para comprar un producto
+  //   welcomeMessage = true; // Muestra el mensaje de bienvenida en la pantalla LCD
+  //   showWelcomeMessage();
+  //   Serial.println("entro en la condicion 2");
+  //   if (score  > scoreHi){
+  //     scoreHi = score;
+  //     writeInEEPROM(scoreHi, MAX_MENU_ITEMS*(int)2+MAX_MENU_ITEMS*(int)2+2); 
+  //   }
+  //   score = 0;  startTime = millis(); firstRun = true; tutorialShow = false;
+
+    
+  // } else if (getState(COIN_INPUT_PIN) == HIGH) { // Si se inserta una moneda
+  //   totalCredit += 1.0; // Añade 1.0 al crédito total del usuario
+  //   Serial.println("delay(40)");delay(40);; // Espera 40 milisegundos
+  //   credit = checkCredit(totalCredit, 0.0); // Verifica si el crédito es suficiente para comprar un producto
+  //   showOneTime = false; // Reinicia la variable booleana de crédito mostrado
+  //   servicio = false;
+  //   Serial.println("entro en la condicion 3");
+  //   if (score  > scoreHi){
+  //     scoreHi = score;
+  //     writeInEEPROM(scoreHi, MAX_MENU_ITEMS*(int)2+MAX_MENU_ITEMS*(int)2+2); 
+  //   }
+  //   score = 0;  startTime = millis(); firstRun = true; tutorialShow = false;
+
+  // } else if (getState(PROD0_BUTTON) == 1 && productCost[0] > 0.0f) { // Si se presiona el botón del producto 0 y el costo del producto es mayor que 0
+  //   welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
+  //   servicio = false; // Establece la variable booleana de servicio en falso
+  //   credit = dispenceProduct(&totalCredit, productCost[0], 0); // Dispensa el producto 0 si el crédito es suficiente
+  //   showOneTime = false; // Reinicia la variable booleana de crédito mostrado
+  //   change = true; // Establece la variable booleana de cambio en verdadero
+  //   Serial.println("entro en la condicion 4");
+  //   if (score  > scoreHi){
+  //     scoreHi = score;
+  //     writeInEEPROM(scoreHi, MAX_MENU_ITEMS*(int)2+MAX_MENU_ITEMS*(int)2+2); 
+  //   }
+  //   score = 0;  startTime = millis(); firstRun = true; tutorialShow = false;
+
+  // } else if (getState(PROD1_BUTTON) == 1 && productCost[1] > 0.0f) { // Si se presiona el botón del producto 1 y el costo del producto es mayor que 0
+  //   welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
+  //   servicio = false; // Establece la variable booleana de servicio en falso
+  //   credit = dispenceProduct(&totalCredit, productCost[1], 1); // Dispensa el producto 1 si el crédito es suficiente
+  //   showOneTime = false; // Reinicia la variable booleana de crédito mostrado
+  //   change = true; // Establece la variable booleana de cambio en verdadero
+  //   Serial.println("entro en la condicion 5");
+  //   if (score  > scoreHi){
+  //     scoreHi = score;
+  //     writeInEEPROM(scoreHi, MAX_MENU_ITEMS*(int)2+MAX_MENU_ITEMS*(int)2+2); 
+  //   }
+  //   score = 0;  startTime = millis(); firstRun = true; tutorialShow = false;
+ 
+  // } else if (getState(PROD2_BUTTON) == 1 && productCost[2] > 0.0f) { // Si se presiona el botón del producto 2 y el costo del producto es mayor que 0
+  //   welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
+  //   servicio = false; // Establece la variable booleana de servicio en falso
+  //   credit = dispenceProduct(&totalCredit, productCost[2], 2); // Dispensa el producto 2 si el crédito es suficiente
+  //   showOneTime = false; // Reinicia la variable booleana de crédito mostrado
+  //   change = true; // Establece la variable booleana de cambio en verdadero
+  //   Serial.println("entro en la condicion 6");
+  //   if (score  > scoreHi){
+  //     scoreHi = score;
+  //     writeInEEPROM(scoreHi, MAX_MENU_ITEMS*(int)2+MAX_MENU_ITEMS*(int)2+2); 
+  //   }
+  //   score = 0;  startTime = millis(); firstRun = true; tutorialShow = false;
+
+  // } else if (getState(PROD3_BUTTON) == 1 && productCost[3] > 0.0f) { // Si se presiona el botón del producto 3 y el costo del producto es mayor que 0
+  //   welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
+  //   servicio = false; // Establece la variable booleana de servicio en falso
+  //   credit = dispenceProduct(&totalCredit, productCost[3], 3); // Dispensa el producto 3 si el crédito es suficiente
+  //   showOneTime = false; // Reinicia la variable booleana de crédito mostrado
+  //   change = true; // Establece la variable booleana de cambio en verdadero
+  //   Serial.println("entro en la condicion 7");
+  //   if (score  > scoreHi){
+  //     scoreHi = score;
+  //     writeInEEPROM(scoreHi, MAX_MENU_ITEMS*(int)2+MAX_MENU_ITEMS*(int)2+2); 
+  //   }
+  //   score = 0;  startTime = millis(); firstRun = true; tutorialShow = false;
+
+  // } else if (getState(PROD4_BUTTON) == 1 && productCost[4] > 0.0f) { // Si se presiona el botón del producto 4 y el costo del producto es mayor que 0
+  //   welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
+  //   servicio = false; // Establece la variable booleana de servicio en falso
+  //   credit = dispenceProduct(&totalCredit, productCost[4], 4); // Dispensa el producto 4 si el crédito es suficiente
+  //   showOneTime = false; // Reinicia la variable booleana de crédito mostrado
+  //   change = true; // Establece la variable booleana de cambio en verdadero
+  //   Serial.println("entro en la condicion 8");
+  //   if (score  > scoreHi){
+  //     scoreHi = score;
+  //     writeInEEPROM(scoreHi, MAX_MENU_ITEMS*(int)2+MAX_MENU_ITEMS*(int)2+2); 
+  //   }
+  //   score = 0;  startTime = millis(); firstRun = true; tutorialShow = false;
+
+  // } else if (getState(PROD5_BUTTON) == 1 && productCost[5] > 0.0f) { // Si se presiona el botón del producto 5 y el costo del producto es mayor que 0
+  //   welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
+  //   servicio = false; // Establece la variable booleana de servicio en falso
+  //   credit = dispenceProduct(&totalCredit, productCost[5], 5); // Dispensa el producto 5 si el crédito es suficiente
+  //   showOneTime = false; // Reinicia la variable booleana de crédito mostrado
+  //   change = true; // Establece la variable booleana de cambio en verdadero
+  //   Serial.println("entro en la condicion 9");
+  //   if (score  > scoreHi){
+  //     scoreHi = score;
+  //     writeInEEPROM(scoreHi, MAX_MENU_ITEMS*(int)2+MAX_MENU_ITEMS*(int)2+2); 
+  //   }
+  //   score = 0;  startTime = millis(); firstRun = true; tutorialShow = false;
+
+  // } else if (getState(PROD6_BUTTON) == 1 && productCost[6] > 0.0f) { // Si se presiona el botón del producto 6 y el costo del producto es mayor que 0
+  //   welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
+  //   servicio = false; // Establece la variable booleana de servicio en falso
+  //   credit = dispenceProduct(&totalCredit, productCost[6], 6); // Dispensa el producto 6 si el crédito es suficiente
+  //   showOneTime = false; // Reinicia la variable booleana de crédito mostrado
+  //   change = true; // Establece la variable booleana de cambio en verdadero
+  //   Serial.println("entro en la condicion 10");
+  //   if (score  > scoreHi){
+  //     scoreHi = score;
+  //     writeInEEPROM(scoreHi, MAX_MENU_ITEMS*(int)2+MAX_MENU_ITEMS*(int)2+2); 
+  //   }
+  //   score = 0;  startTime = millis(); firstRun = true; tutorialShow = false;
+
+  // } else if (getState(PROD7_BUTTON) == 1 && productCost[7] > 0.0f) { // Si se presiona el botón del producto 7 y el costo del producto es mayor que 0
+  //   welcomeMessage = false; // Reinicia la variable booleana de mensaje de bienvenida
+  //   servicio = false; // Establece la variable booleana de servicio en falso
+  //   credit = dispenceProduct(&totalCredit, productCost[7], 7); // Dispensa el producto 7 si el crédito es suficiente
+  //   showOneTime = false; // Reinicia la variable booleana de crédito mostrado
+  //   change = true; // Establece la variable booleana de cambio en verdadero
+  //   Serial.println("entro en la condicion 11");
+  //   if (score  > scoreHi){
+  //     scoreHi = score;
+  //     writeInEEPROM(scoreHi, MAX_MENU_ITEMS*(int)2+MAX_MENU_ITEMS*(int)2+2); 
+  //   }
+  //   score = 0;  startTime = millis(); firstRun = true; tutorialShow = false;
+
+  // }else if(credit == true && showOneTime == false){ // Si el crédito es suficiente y el crédito no se ha mostrado
+  // showOneTime = showCredit(totalCredit); // Muestra el crédito en la pantalla LCD y actualiza la variable booleana de crédito mostrado
+  // credit = checkCredit(totalCredit, 0.0); // Verifica si el crédito restante es suficiente para comprar otro producto
+  //   if (score  > scoreHi){
+  //     scoreHi = score;
+  //     writeInEEPROM(scoreHi, MAX_MENU_ITEMS*(int)2+MAX_MENU_ITEMS*(int)2+2); 
+  //   }
+  // score = 0;  startTime = millis(); firstRun = true; tutorialShow = false;
+ 
+  
+  //   // Si hay crédito restante, se ha solicitado cambio y se ha seleccionado el servicio
+  //   if (totalCredit > 0.0 && change == true && servicio == true){
+  //     showChangeMessage(); // Muestra el mensaje de cambio en la pantalla LCD
+  //     digitalWrite(activaHooperSALIDA, HIGH); // Activa la salida del dispensador de monedas
+      
+  //     // Mientras haya crédito restante, se espera a que se retiren las monedas
+  //     while (totalCredit > 0.0){
+  //       if(getState(salidaDeMONEDAS) == LOW){ // Si se detecta una moneda en la salida
+  //         totalCredit -= 1.0; // Se resta el valor de la moneda al crédito restante
+  //         Serial.println("delay(200)");delay(200);; // Se espera un tiempo para evitar contar varias veces la misma moneda
+  //       }
+  //     }
+      
+  //     digitalWrite(activaHooperSALIDA, LOW); // Desactiva la salida del dispensador de monedas
+  //     showGoodbyeMessage(); // Muestra el mensaje de despedida en la pantalla LCD
+  //     credit = checkCredit(totalCredit, 0.0); // Verifica si el crédito restante es suficiente para comprar otro producto
+  //     change = false; // Reinicia la variable booleana de cambio solicitado
+  //     servicio = false; // Reinicia la variable booleana de servicio seleccionado
+  //   }
+  //   Serial.println("entro en la condicion 12");
+  // }
+
+  if (millis() - startTime > TIEMPO_ESPERA_DYNO_GAME * 1000) {
+      tutorialShow = true;
+      Serial.println("entro en la funcion dynoGame");
+      dynoGame();
   }
-  Serial.println("entro en la condicion 1");
-}
-
-void resetScoreAndTime() {
-  if (score > scoreHi) {
-    scoreHi = score;
-    writeInEEPROM(scoreHi, MAX_MENU_ITEMS * 2 + MAX_MENU_ITEMS * 2 + 2);
-  }
-  score = 0;
-  startTime = millis();
-  firstRun = true;
-  tutorialShow = false;
-}
-
-void handleProductButton(int button, float cost) {
-  if (getState(button) == 1 && cost > 0.0f) {
-    welcomeMessage = false;
-    service = false;
-    credit = dispenceProduct(&totalCredit, cost, button);
-    showOneTime = false;
-    change = true;
-    Serial.println("entro en la condicion " + String(button));
-    resetScoreAndTime();
-  }
-}
-
-void handleCredit() {
-  if (credit == true && showOneTime == false) {
-    showOneTime = showCredit(totalCredit);
-    credit = checkCredit(totalCredit, 0.0);
-    resetScoreAndTime();
-
-    if (totalCredit > 0.0 && change == true && service == true) {
-      showChangeMessage();
-      digitalWrite(ACTIVATE_HOOPER_OUTPUT, HIGH);
-
-      while (totalCredit > 0.0) {
-        if (getState(COIN_OUTPUT) == LOW) {
-          totalCredit -= 1.0;
-          Serial.println("delay(200)");
-          delay(200);
-        }
-      }
-
-      digitalWrite(ACTIVATE_HOOPER_OUTPUT, LOW);
-      showGoodbyeMessage();
-      credit = checkCredit(totalCredit, 0.0);
-      change = false;
-      service = false;
-    }
-    Serial.println("entro en la condicion 12");
-  }
-}
-
-void handleButtons() {
-  if (getState(BUTTON_MENU_PIN) == 1 && getState(BUTTON_SELECT_PIN) == 1) {
-    enterConfigurationMode();
-  } else if (!configurationMode && !welcomeMessage && !credit) {
-    welcomeMessage = true;
-    showWelcomeMessage();
-    Serial.println("entro en la condicion 2");
-    resetScoreAndTime();
-  } else if (getState(COIN_INPUT_PIN) == HIGH) {
-    totalCredit += 1.0;
-    Serial.println("delay(40)");
-    delay(40);
-    credit = checkCredit(totalCredit, 0.0);
-    showOneTime = false;
-    service = false;
-    Serial.println("entro en la condicion 3");
-    resetScoreAndTime();
+  if (millis() - startTime > TIEMPO_ESPERA_TUTORIAL * 1000 && tutorialShow == false) {
+      Serial.println("entro en la funcion mostrar mostrarTutorialLCD");
+      mostrarTutorialLCD();
   } else {
-    for (int i = 0; i < 8; i++) {
-      handleProductButton(PROD_BUTTONS[i], productCost[i]);
-    }
+      if (currentTime != lastPrintedTime) {
+          lastPrintedTime = currentTime;
+          Serial.print("StartTime: "); Serial.println(currentTime);
+      }
   }
-
-  handleCredit();
 }
+
+
 /**
  * Muestra un mensaje en la pantalla LCD indicando el cambio que se debe entregar al usuario.
  */
@@ -323,11 +416,11 @@ void mostrarTutorialLCD() {
   if (millis() - lastUpdate >= 100) { // Si han pasado 3 segundos
     lastUpdate = millis(); // Actualiza el tiempo de la última actualización
 
-    if (i < sizeof(tutorialMessages) / sizeof(tutorialMessages[0])) {
+    if (i < sizeof(mensajesTutorial) / sizeof(mensajesTutorial[0])) {
       lcd.setCursor(0, i);
       lcd.print("                "); // Limpia la línea
 
-      strcpy_P(buffer, (char*)pgm_read_word(&(tutorialMessages[i])));
+      strcpy_P(buffer, (char*)pgm_read_word(&(mensajesTutorial[i])));
 
       // Si el mensaje es más largo de 20 caracteres, se desplaza de derecha a izquierda
       if (strlen(buffer) > 20) {
@@ -347,7 +440,7 @@ void mostrarTutorialLCD() {
         i++;
       }
     }
-    if(i == sizeof(tutorialMessages) / sizeof(tutorialMessages[0])){
+    if(i == sizeof(mensajesTutorial) / sizeof(mensajesTutorial[0])){
       i = 1;
     }
   }
@@ -813,7 +906,7 @@ void showProduct(int index) {
     delay((int)((float)(pumpTime[index]/100.0)*1000.0));  // Espera el tiempo de dispensación del producto
   }
   activeOutput(0, index);
-  service = true;
+  servicio = true;
   // Espera dos segundos y muestra un mensaje de agradecimiento
   Serial.println("delay(2000)");delay(2000);;
   goodBye();
@@ -978,4 +1071,492 @@ int getState(int pinNumber) {
   return (0x01&(estados>>pinNumber));
 }
 
+void ClearLCD() {
+  for (int i = 0; i < 4; i++) {
+    lcd.setCursor(0, i);
+    lcd.print("                    ");
+  }
+}
 
+
+bool dinoPieTraseroArriba(int pos){
+    lcd.createChar(1, CHARDINO_1);
+    lcd.createChar(2, CHARDINO_2);
+    lcd.createChar(3, CHARDINO_3);
+    lcd.createChar(4, CHARDINO_4);
+    lcd.createChar(5, CHARDINO_5T);
+    lcd.createChar(6, CHARDINO_6T);
+    lcd.createChar(7, CHARDINO_7T);
+    lcd.setCursor(0+pos, 2); lcd.write(1);
+    lcd.setCursor(1+pos, 2); lcd.write(2);
+    lcd.setCursor(2+pos, 2); lcd.write(3);
+    lcd.setCursor(3+pos, 2); lcd.write(4);
+    lcd.setCursor(0+pos, 3); lcd.write(5);
+    lcd.setCursor(1+pos, 3); lcd.write(6);
+    lcd.setCursor(2+pos, 3); lcd.write(7);
+}
+
+char dinoPieDelanteroArriba(int pos){
+    lcd.createChar(1, CHARDINO_1);
+    lcd.createChar(2, CHARDINO_2);
+    lcd.createChar(3, CHARDINO_3);
+    lcd.createChar(4, CHARDINO_4);
+    lcd.createChar(5, CHARDINO_5D);
+    lcd.createChar(6, CHARDINO_6D);
+    lcd.createChar(7, CHARDINO_7D);
+    lcd.setCursor(0+pos, 2); lcd.write(1);
+    lcd.setCursor(1+pos, 2); lcd.write(2);
+    lcd.setCursor(2+pos, 2); lcd.write(3);
+    lcd.setCursor(3+pos, 2); lcd.write(4);
+    lcd.setCursor(0+pos, 3); lcd.write(5);
+    lcd.setCursor(1+pos, 3); lcd.write(6);
+    lcd.setCursor(2+pos, 3); lcd.write(7);
+}
+
+void dinoAmbosPies(int posH = 1, int posV = 0){
+  lcd.createChar(1,CHARDINO_1);
+  lcd.createChar(2,CHARDINO_2);
+  lcd.createChar(3,CHARDINO_3);
+  lcd.createChar(4,CHARDINO_4);
+  lcd.createChar(5,CHARDINO_5);
+  lcd.createChar(6,CHARDINO_6);
+  lcd.createChar(7,CHARDINO_7T);
+  lcd.setCursor(0+posH, 2-posV); lcd.write(1);
+  lcd.setCursor(1+posH, 2-posV); lcd.write(2);
+  lcd.setCursor(2+posH, 2-posV); lcd.write(3);
+  lcd.setCursor(3+posH, 2-posV); lcd.write(4);
+  lcd.setCursor(0+posH, 3-posV); lcd.write(5);
+  lcd.setCursor(1+posH, 3-posV); lcd.write(6);
+  lcd.setCursor(2+posH, 3-posV); lcd.write(7);
+}
+
+
+void dinoCaminar(int pos = 1, unsigned long tiempo = 50) {
+  static bool estado = false;
+  static unsigned long lastChange = 0;
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - lastChange >= tiempo) {
+    lastChange = currentMillis;
+    if (estado == false) {
+      dinoPieDelanteroArriba(pos);
+      estado = true;
+    } else {
+      dinoPieTraseroArriba(pos);
+      estado = false;
+    }
+  }
+}
+
+
+void dinoAvanzar(unsigned long intervalo) {
+  static unsigned long ultimoMovimiento = 0;
+  unsigned long tiempoActual = millis();
+  static int posicion = 0;
+
+  if (tiempoActual - ultimoMovimiento >= intervalo) {
+    if (posicion <= LCD_WIDTH){
+      posicion++;
+      lcd.clear();
+    }else{
+      posicion = 0;
+    }
+    ultimoMovimiento = tiempoActual;
+  }
+  dinoCaminar(posicion, 150);
+
+}
+
+bool dinoSaltarHigh() {
+  static unsigned int temporizador1 = 0;
+  static unsigned int temporizador2 = 0;
+  const int intervalo1 = 1;
+  const int intervalo2 = 5;
+
+  if(temporizador1 == 0){
+    lcd.setCursor(1, 3); lcd.print("    ");
+    lcd.setCursor(1, 2); lcd.print("    ");
+    lcd.setCursor(1, 1); lcd.print("    ");
+    lcd.setCursor(1, 0); lcd.print("    ");
+  }
+  if(temporizador1 < intervalo1){
+    dinoAmbosPies(1, 1);
+    temporizador1++;
+    return true;
+  }
+  if(temporizador1 == intervalo1){
+    lcd.setCursor(1, 3); lcd.print("    ");
+    lcd.setCursor(1, 2); lcd.print("    ");
+    lcd.setCursor(1, 1); lcd.print("    ");
+    lcd.setCursor(1, 0); lcd.print("    ");
+  }
+  if(temporizador1 >= intervalo1 && temporizador1 < intervalo2){
+    dinoAmbosPies(1, 2);
+    temporizador1++;
+    return true;
+  }
+  if (temporizador1 == intervalo2){
+    temporizador1 = 0;
+    lcd.setCursor(1, 3); lcd.print("    ");
+    lcd.setCursor(1, 2); lcd.print("    ");
+    lcd.setCursor(1, 1); lcd.print("    ");
+    lcd.setCursor(1, 0); lcd.print("    ");
+  }
+  return false;
+}
+
+bool dinoSaltarSmall() {
+  static unsigned int temporizador1 = 0;
+  const int intervalo1 = 4;
+
+  if(temporizador1 == 0){
+    lcd.setCursor(1, 3); lcd.print("    ");
+    lcd.setCursor(1, 2); lcd.print("    ");
+    lcd.setCursor(1, 1); lcd.print("    ");
+    lcd.setCursor(1, 0); lcd.print("    ");
+  }
+  if(temporizador1 < intervalo1){
+    dinoAmbosPies(1, 1);
+    temporizador1++;
+    return true;
+  }
+  if (temporizador1 == intervalo1){
+    temporizador1 = 0;
+    lcd.setCursor(1, 3); lcd.print("    ");
+    lcd.setCursor(1, 2); lcd.print("    ");
+    lcd.setCursor(1, 1); lcd.print("    ");
+    lcd.setCursor(1, 0); lcd.print("    ");
+  }
+  return false;
+}
+
+void dinoSaltarAleatorio() {
+  static unsigned long ultimoSalto = 0;
+  unsigned long tiempoActual = millis();
+  static bool saltoAlto = false;
+  static bool saltoBajo = false;
+
+  if (tiempoActual - ultimoSalto >= 2000) { // 500 milisegundos = medio segundo
+    if (random(2) == 0) { // Genera un número aleatorio 0 o 1
+      saltoAlto = true; 
+    } else {
+      saltoBajo = true;
+    }
+    ultimoSalto = tiempoActual;
+  }
+  if(saltoAlto == true){
+    saltoAlto = dinoSaltarHigh();
+  }
+  if (saltoBajo == true){
+    saltoBajo = dinoSaltarSmall();
+  }
+
+  if(saltoAlto == false && saltoBajo == false) { 
+   dinoCaminar(1, 200);
+  }
+}
+
+int dinoSaltarObstaculo(byte typeObstaculo) {
+  static bool saltoAlto = false;
+  static bool saltoBajo = false;
+  static int tipoSalto = 0;
+
+  if (typeObstaculo == 1 && saltoAlto == false) { 
+    saltoAlto = true; 
+    tipoSalto = SALTO_HIGH;
+  } else if(typeObstaculo == 2 && saltoBajo == false) {
+    saltoBajo = true;
+    tipoSalto = SALTO_LOW;
+  }
+
+  if(saltoAlto == true){
+    saltoAlto = dinoSaltarHigh();
+  }else{
+    saltoAlto = false;
+  }
+  if (saltoBajo == true){
+    saltoBajo = dinoSaltarSmall();
+  }else{
+    saltoBajo = false;
+  }
+
+  if(saltoAlto == false && saltoBajo == false) { 
+   dinoCaminar(1, 2);
+   tipoSalto = 0;
+  }
+  return tipoSalto;
+}
+
+void mostrarCaracteresAleatorios(void){
+  static unsigned long ultimoMovimiento = 0;
+  unsigned long tiempoActual = millis();
+  static unsigned long lastChange2 = 0;
+  unsigned long currentTime2 = millis();
+  static char caracteres[20]={0x20,0x20,0x20,0x20,0x20,
+                              0x20,0x20,0x20,0x20,0x20,
+                              0x20,0x20,0x20,0x20,0x20,
+                              0x20,0x20,0x20,0x20,0x20};
+
+  if (currentTime2 - lastChange2 >= 300) {
+    lastChange2 = currentTime2;
+    lcd.clear();
+
+    for (int i = 19; i > 0; i--){
+      caracteres[i] = caracteres[i-1];
+    }
+
+    if (tiempoActual - ultimoMovimiento >= random(2500, 5000)) { // 500 milisegundos = medio segundo
+      ultimoMovimiento = tiempoActual;
+      caracteres[0] = random(33, 127);
+    }else{
+      caracteres[0] = 0x20;
+    }
+
+    for (int i = 0; i < 20; i++)
+    {
+      lcd.setCursor(19-i, 3); // Posiciona el cursor en la columna más a la derecha de la línea inferior
+      lcd.write(caracteres[i]); // Escribe el caracter en el LCD
+    }
+  }
+}
+
+void evacionObstaculos(){
+  static unsigned long ultimoMovimiento = 0;
+  unsigned long tiempoActual = millis();
+  static unsigned long lastChange2 = 0;
+  unsigned long currentTime2 = millis();
+  static bool tipo_salto = false;
+  char scoreHiStr[5]; // Buffer for the high score
+  char scoreStr[5]; // Buffer for the score
+  static char caracteres[20]={0x20,0x20,0x20,0x20,0x20,
+                              0x20,0x20,0x20,0x20,0x20,
+                              0x20,0x20,0x20,0x20,0x20,
+                              0x20,0x20,0x20,0x20,0x20};
+
+  if (firstRun) {
+    lcd.clear();
+    firstRun = false;
+  }
+  if (currentTime2 - lastChange2 >= VELOCIDAD_JUEGO) {
+    lastChange2 = currentTime2;
+
+    for (int i = 19; i > 0; i--){
+      caracteres[i] = caracteres[i-1];
+    }
+
+    if (tiempoActual - ultimoMovimiento >= random(1500, 5000)) { // 500 milisegundos = medio segundo
+      ultimoMovimiento = tiempoActual;
+      caracteres[0] = random(33, 127);
+    }else{
+      caracteres[0] = 0x20;
+    }
+
+    if (tipo_salto == true){
+      for (int i = 0; i < 20; i++){
+        lcd.setCursor(19-i, 3); // Posiciona el cursor en la columna más a la derecha de la línea inferior
+        lcd.write(caracteres[i]); // Escribe el caracter en el LCD
+      }
+      Serial.println("Saltando");
+    }else if(tipo_salto == false){
+      for (int i = 0; i < 16; i++){
+        lcd.setCursor(19-i, 3); // Posiciona el cursor en la columna más a la derecha de la línea inferior
+        lcd.write(caracteres[i]); // Escribe el caracter en el LCD
+      }
+    }
+  }
+  if(caracteres[16] != 0x20){
+    tipo_salto = dinoSaltarObstaculo(2);
+    Serial.println("Obstaculo detectado");
+    score++;
+      Serial.print("Hi: ");
+      Serial.print(scoreHi);
+      Serial.print(" score: ");
+      Serial.println(score);
+  }else{
+    tipo_salto = dinoSaltarObstaculo(0);
+  }
+  lcd.setCursor(6, 0);
+  lcd.print("Hi: ");
+  sprintf(scoreHiStr, "%04d", scoreHi); 
+  lcd.print(scoreHiStr);
+  lcd.print("  ");
+  sprintf(scoreStr, "%04d", score); // Format the score with leading zeros
+  lcd.print(scoreStr);
+}
+
+
+void dynoGame() {
+    static unsigned long ultimoMovimiento = 0;
+    unsigned long tiempoActual = millis();
+    static unsigned long lastChange2 = 0;
+    unsigned long currentTime2 = millis();
+    static int tipo_salto = false;
+    static bool dobleAltura = false;
+    char scoreHiStr[6]; // Buffer for the high score
+    char scoreStr[6]; // Buffer for the score
+    static char caracteres[20] = {0x20, 0x20, 0x20, 0x20, 0x20,
+                                   0x20, 0x20, 0x20, 0x20, 0x20,
+                                   0x20, 0x20, 0x20, 0x20, 0x20,
+                                   0x20, 0x20, 0x20, 0x20, 0x20};
+    static char caracteres2[20] = {0x20, 0x20, 0x20, 0x20, 0x20,
+                                    0x20, 0x20, 0x20, 0x20, 0x20,
+                                    0x20, 0x20, 0x20, 0x20, 0x20,
+                                    0x20, 0x20, 0x20, 0x20, 0x20};
+
+    if (firstRun) {
+        lcd.clear();
+        firstRun = false;
+    }
+
+    if (currentTime2 - lastChange2 >= VELOCIDAD_JUEGO) {
+        lastChange2 = currentTime2;
+
+        memmove(&caracteres[1], &caracteres[0], 19);
+        memmove(&caracteres2[1], &caracteres2[0], 19);
+
+        if (tiempoActual - ultimoMovimiento >= random(1500, 5000)) { // 500 milisegundos = medio segundo
+            ultimoMovimiento = tiempoActual;
+            caracteres[0] = random(33, 127);
+            if (random(2) == 0) { // Genera un número aleatorio 0 o 1
+                dobleAltura = true;
+                caracteres2[0] = caracteres[0];
+                caracteres[0] = 0x20;
+            }
+        } else {
+            caracteres[0] = 0x20;
+            caracteres2[0] = 0x20;
+        }
+
+        if (tipo_salto == SALTO_HIGH) {
+            for (int i = 0; i < LCD_WIDTH; i++) {
+                lcd.setCursor(LCD_WIDTH - i - 1, 2); // Posiciona el cursor en la columna más a la derecha de la línea inferior
+                lcd.write(caracteres2[i]); // Escribe el caracter en el LCD
+                lcd.setCursor(LCD_WIDTH - i - 1, 3); // Posiciona el cursor en la columna más a la derecha de la línea inferior
+                lcd.write(caracteres[i]); // Escribe el caracter en el LCD
+            }
+        } else if (tipo_salto == SALTO_LOW) {
+            for (int i = 0; i < LCD_WIDTH; i++) {
+                if (i < 15) {
+                    lcd.setCursor(LCD_WIDTH - i - 1, 2); // Posiciona el cursor en la columna más a la derecha de la línea inferior
+                    lcd.write(caracteres2[i]); // Escribe el caracter en el LCD
+                }
+                lcd.setCursor(LCD_WIDTH - i - 1, 3); // Posiciona el cursor en la columna más a la derecha de la línea inferior
+                lcd.write(caracteres[i]); // Escribe el caracter en el LCD
+            }
+        } else if (tipo_salto == SALTO_NULL) {
+            for (int i = 0; i < 16; i++) {
+                if (i < 15) {
+                    lcd.setCursor(LCD_WIDTH - i - 1, 2); // Posiciona el cursor en la columna más a la derecha de la línea inferior
+                    lcd.write(caracteres2[i]); // Escribe el caracter en el LCD
+                }
+
+                lcd.setCursor(LCD_WIDTH - i - 1, 3); // Posiciona el cursor en la columna más a la derecha de la línea inferior
+                lcd.write(caracteres[i]); // Escribe el caracter en el LCD
+            }
+        }
+    }
+
+    if (caracteres[16] != 0x20 && tipo_salto == SALTO_NULL) {
+        tipo_salto = dinoSaltarObstaculo(2);
+        score++;
+        if (score > 99999){
+            score = 0;
+        }
+    } else if (caracteres2[15] != 0x20 && tipo_salto == SALTO_NULL) {
+        tipo_salto = dinoSaltarObstaculo(1);
+        score++;
+        if (score > 99999){
+            score = 0;
+        }
+    } else {
+        tipo_salto = dinoSaltarObstaculo(0);
+    }
+
+    lcd.setCursor(5, 0);
+    lcd.print("Hi: ");
+    sprintf(scoreHiStr, "%05d", scoreHi);
+    lcd.print(scoreHiStr);
+    lcd.print(" ");
+    sprintf(scoreStr, "%05d", score); // Format the score with leading zeros
+    lcd.print(scoreStr);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Función para mostrar mensajesTutorial en el LCD
+// void mostrarTutorialLCD() {
+//   char buffer[100]; 
+
+//   strcpy_P(buffer, (char*)pgm_read_word(&(mensajesTutorial[0])));
+//   lcd.setCursor((20 - strlen(buffer)) / 2, 0);
+//   lcd.print(buffer);
+
+//   for (int i = 1; i < sizeof(mensajesTutorial) / sizeof(mensajesTutorial[0]); i++) {
+//     lcd.setCursor(0, i);
+//     lcd.print("                "); // Limpia la línea
+
+//     strcpy_P(buffer, (char*)pgm_read_word(&(mensajesTutorial[i])));
+
+//     // Si el mensaje es más largo de 20 caracteres, se desplaza de derecha a izquierda
+//     if (strlen(buffer) > 20) {
+//       for (int j = 0; j < strlen(buffer); j++) {
+//         lcd.setCursor(0, i);
+//         lcd.print(String(buffer).substring(j, j + 20));
+//         delay(300);
+//       }
+//       lcd.setCursor(0, i);
+//       lcd.print(String(buffer).substring(0, 20)); // Muestra la primera parte del texto
+//     } else {
+//       lcd.setCursor((20 - strlen(buffer)) / 2, i);
+//       lcd.print(buffer);
+//     }
+
+//     // Esperar 3 segundos
+//     delay(3000);
+//   }
+// }
+
+//  if (millis() - startTime > TIEMPO_ESPERA_TUTORIAL * 1000) {
+//       Serial.println("entro en la funcion mostrar TutorialLCD");
+//       mostrarTutorialLCD();
+//   } else {
+//       if (currentTime != lastPrintedTime) {
+//           lastPrintedTime = currentTime;
+//           Serial.print("StartTime: "); Serial.println(currentTime);
+//       }
+//   }
+
+
+// Please see the build logs in output path: /home/nicolas/Github/ArduinoOutput
+// Sketch uses 14342 bytes (46%) of program storage space. Maximum is 30720 bytes.
+// Global variables use 1120 bytes (54%) of dynamic memory, leaving 928 bytes for local variables. Maximum is 2048 bytes.
+// IntelliSense configuration already up to date. To manually rebuild your IntelliSense configuration run "Ctrl+Alt+I"
+
+// Please see the build logs in output path: /home/nicolas/Github/ArduinoOutput
+// Sketch uses 14328 bytes (46%) of program storage space. Maximum is 30720 bytes.
+// Global variables use 1120 bytes (54%) of dynamic memory, leaving 928 bytes for local variables. Maximum is 2048 bytes.
