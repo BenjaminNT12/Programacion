@@ -2,8 +2,8 @@
 #include <LiquidCrystal_I2C.h> // Biblioteca para controlar la pantalla LCD
 
 extern LiquidCrystal_I2C lcd;
-extern int score;  
-extern int scoreHi;
+extern unsigned long score;
+extern unsigned long scoreHi;
 extern bool firstRun;
 
 void dinoPieTraseroArriba(int pos){
@@ -198,6 +198,8 @@ void updateCaracteres(char* caracteres, char* caracteres2, unsigned long& ultimo
 
 
 void writeCaracteres(int tipo_salto, char* caracteres, char* caracteres2) {
+    // unsigned long startMillis = millis();  // Guarda el tiempo de inicio
+
     int limit = (tipo_salto == JUMP_NULL) ? 16 : LCD_WIDTH;
     for (int i = 0; i < limit; i++) {
         if (tipo_salto == JUMP_LOW && i <= 15) {
@@ -211,9 +213,14 @@ void writeCaracteres(int tipo_salto, char* caracteres, char* caracteres2) {
         lcd.setCursor(LCD_WIDTH - i - 1, 3);
         lcd.write(caracteres[i]);
     }
+
+    // unsigned long duration = millis() - startMillis;  // Calcula la duración
+    // Serial.print("writeCaracteres took: ");
+    // Serial.print(duration);
+    // Serial.println(" ms");
 }
 
-void updateScore(int& tipo_salto, char* caracteres, char* caracteres2, int& score) {
+void updateScore(int& tipo_salto, char* caracteres, char* caracteres2, unsigned long& score) {
     if ((caracteres[15] != 0x20 || caracteres2[15] != 0x20) && tipo_salto == JUMP_NULL) {
         tipo_salto = dinoSaltarObstaculo(caracteres[15] != 0x20 ? 2 : 1);
         score = (score + 1) % 100000;
@@ -222,7 +229,7 @@ void updateScore(int& tipo_salto, char* caracteres, char* caracteres2, int& scor
     }
 }
 
-void printScore(int scoreHi, int score) {
+void printScore(unsigned long scoreHi, unsigned long score) {
     char scoreHiStr[6];
     char scoreStr[6];
 
@@ -261,8 +268,8 @@ void dynoGame() {
 
         updateCaracteres(caracteres, caracteres2, ultimoMovimiento, tiempoActual);
         writeCaracteres(tipo_salto, caracteres, caracteres2);
+        updateScore(tipo_salto, caracteres, caracteres2, score);
+        printScore(scoreHi, score);
     }
 
-    updateScore(tipo_salto, caracteres, caracteres2, score);
-    printScore(scoreHi, score);
 }

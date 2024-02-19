@@ -1,65 +1,34 @@
+// Last update: 2021-08-01 20:00:00
+// video para configurar el monedero
+// https://www.youtube.com/watch?v=oxiUWSNfdiY&ab_channel=ElHendri
+
+
+
+
 #include "serve.h"  
 #include "game.h"
 #include "tutorial.h"
 #include <LiquidCrystal_I2C.h> // Biblioteca para controlar la pantalla LCD
 #include <EEPROM.h> // Biblioteca para acceder a la memoria EEPROM
+#include <ShiftIn.h>
 
+extern ShiftIn<2> shift;
 extern LiquidCrystal_I2C lcd;
 
+byte leds = 0;		
+int menuIndex = 0;
 
-const unsigned long TUTORIAL_WAIT_TIME = 5;
-const unsigned long DYNO_GAME_WAIT_TIME = 10;
-
-// Pines para los botones
-extern const int BUTTON_DOWN_PIN;
-extern const int BUTTON_UP_PIN;
-extern const int BUTTON_MENU_PIN;
-extern const int BUTTON_SELECT_PIN;
-
-extern const int BUTTON_PRODUCT1_PIN;
-extern const int BUTTON_PRODUCT2_PIN;
-extern const int BUTTON_PRODUCT3_PIN;
-extern const int BUTTON_PRODUCT4_PIN;
-
-// pin para la ENTRADA de monedas
-extern const int COIN_INPUT_PIN;
-extern const int HOOPER_OUTPUT_PIN;
-extern const int OUTPUT_PIN_0; 
-extern const int OUTPUT_PIN_1; 
-extern const int OUTPUT_PIN_2; 
-extern const int OUTPUT_PIN_3; 
-extern const int OUTPUT_PIN_4; 
-extern const int OUTPUT_PIN_5; 
-extern const int OUTPUT_PIN_6; 
-extern const int OUTPUT_PIN_7; 
-extern const int DATA_PIN;	// Data pin of 74HC595 is connected to Digital pin 13
-extern const int LATCH_PIN;	// Latch pin of 74HC595 is connected to Digital pin A0
-extern const int CLOCK_PIN;	// Clock pin of 74HC595 is connected to Digital pin A1
-extern const int HOOPER_PIN; 
-extern const int MAX_MENU_ITEMS;
-
-byte leds = 0;		// Variable to hold the pattern of which LEDs are currently turned on or off
-
-// Pines para la SALIDA de activacion del rele del HOOPER_PIN
-
-
-
-#define ACTIVATE_HOOPER_OUTPUT HOOPER_PIN
-#define COIN_OUTPUT HOOPER_OUTPUT_PIN
-// #define COIN_OUTPUT BUTTON_PRODUCT1_PIN
-// Variables para el menú
-int menuIndex = 0; // Índice del elemento del menú actual
 extern const int PROD_BUTTONS[];
 
-extern float productQuantity[]; // Cantidad de producto a dispensar
-extern float productCost[]; // Costo del producto
-extern float pumpTime[]; // Tiempo de dispensado del producto
+float productQuantity[MAX_MENU_ITEMS] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}; 
+float productCost[MAX_MENU_ITEMS] = {10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0};
+float pumpTime[MAX_MENU_ITEMS] = {5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0}; 
 
 // Texto para cada elemento del menú
 String menuItems[] = {
   "Cloralex",
   "Pinol",
-  "Maestro Limpio",
+  "Maestro Lim",
   "Fabuloso",
   "Downy",
   "Mas color",
@@ -67,26 +36,22 @@ String menuItems[] = {
   "Zote"
 };
 
-
-int scrollPosition = 0; // Posición actual del desplazamiento
+extern unsigned long startTime; // Tiempo de inicio de la dispensación
 unsigned long scrollDelay = 100; // Retardo entre cada paso del desplazamiento
 float totalCredit = 0.0; // Variable para el crédito total acumulado
-bool service = false; // Variable para el crédito total acumulado
-extern unsigned long startTime; // Tiempo de inicio de la dispensación
-char ledState = 0x1; // Variable booleana para el estado del LED incorporado
+
 int score = 0;  
 int scoreHi = 0;
+
+bool service = false; // Variable para el crédito total acumulado
 bool firstRun = true;
-
-
 bool configurationMode = false; // Variable booleana estática para indicar si el dispositivo está en modo de configuración
 bool welcomeMessage = false; // Variable booleana estática para indicar si se ha mostrado el mensaje de bienvenida
 bool showOneTime = false; // Variable booleana estática para indicar si se ha mostrado el crédito del usuario
 bool change = false; // Variable booleana estática para indicar si se ha mostrado el crédito del usuario
 bool credit = false; // Variable booleana estática para indicar si el crédito del usuario es suficiente para comprar un 
-bool tutorialShow = false; // Variable booleana estática para indicar si se ha mostrado el tutorial
-
-
+bool pendingCoin = false; // Variable booleana estática para indicar si el crédito del usuario es suficiente para comprar un
+extern bool tutorialShow; // Variable booleana estática para indicar si se ha mostrado el tutorial
 
 void resetOutputs() {
   for(int i = 0; i < 8; i++) {
@@ -117,23 +82,7 @@ void showScrollingMessage(const String& message, const int messageLength) {
   }
 }
 
-bool hasTimeElapsed(unsigned long startTime, int waitTimeInSeconds) {
-    return millis() - startTime > waitTimeInSeconds * 1000;
-}
 
-void handleTimeEvents(unsigned long currentTime, unsigned long lastPrintedTime, unsigned long startTime) {
-    if (hasTimeElapsed(startTime, DYNO_GAME_WAIT_TIME)) {
-        tutorialShow = true;
-        Serial.println("entro en la funcion dynoGame");
-        dynoGame();
-    } else if (hasTimeElapsed(startTime, TUTORIAL_WAIT_TIME) && !tutorialShow) {
-        Serial.println("entro en la funcion mostrar mostrarTutorialLCD");
-        mostrarTutorialLCD();
-    } else if (currentTime != lastPrintedTime) {
-        lastPrintedTime = currentTime;
-        Serial.print("StartTime: "); Serial.println(currentTime);
-    }
-}
 
 
 void enterConfigurationMode() {
@@ -206,6 +155,12 @@ void handleCredit() {
   }
 }
 
+// void handleCoin(void){
+//   if (digitalRead(COIN_INPUT_PIN) == HIGH){
+//     pendingCoin = true;
+//   }
+// }
+
 void handleButtons() {
   if (getState(BUTTON_MENU_PIN) == 1 && getState(BUTTON_SELECT_PIN) == 1) {
     enterConfigurationMode();
@@ -214,7 +169,8 @@ void handleButtons() {
     showWelcomeMessage();
     Serial.println("entro en la condicion 2");
     resetScoreAndTime();
-  } else if (getState(COIN_INPUT_PIN) == HIGH) {
+  } else if (digitalRead(COIN_INPUT_PIN) == HIGH || pendingCoin == true) {
+    pendingCoin = false;
     totalCredit += 1.0;
     Serial.println("delay(40)");
     delay(40);
@@ -238,11 +194,16 @@ void handleButtons() {
 
 void showChangeMessage(){
   lcd.clear(); // Limpia la pantalla LCD
-  lcd.setCursor(0, 0); // Establece el cursor en la primera fila y primera columna
-  lcd.print("Tome su cambio: "); // Muestra el mensaje "Tome su cambio: "
-  lcd.setCursor(0, 1); // Establece el cursor en la segunda fila y primera columna
-  lcd.print("$: "); // Muestra el símbolo de dólar
-  lcd.print(totalCredit); // Muestra el valor del crédito restante como cambio
+
+  const char* message1 = "Tome su cambio:";
+  int startPosition1 = (20 - strlen(message1)) / 2;  // Asume que el ancho del LCD es de 20 caracteres
+  lcd.setCursor(startPosition1, 1); // Establece el cursor en la primera fila
+  lcd.print(message1); // Muestra el mensaje "Tome su cambio: "
+
+  String message2 = "$: " + String(totalCredit);
+  int startPosition2 = (20 - message2.length()) / 2;  // Asume que el ancho del LCD es de 20 caracteres
+  lcd.setCursor(startPosition2, 2); // Establece el cursor en la segunda fila
+  lcd.print(message2); // Muestra el símbolo de dólar y el valor del crédito restante como cambio
 }
 
 
@@ -254,11 +215,20 @@ void showChangeMessage(){
 
 void showGoodbyeMessage(){
   lcd.clear(); // Limpia la pantalla LCD
-  lcd.setCursor(0, 0); // Establece el cursor en la primera fila y primera columna
-  lcd.print("Gracias por su"); // Muestra el mensaje "Gracias por su"
-  lcd.setCursor(5, 1); // Establece el cursor en la segunda fila y sexta columna
-  lcd.print("compra"); // Muestra el mensaje "compra"
-  Serial.println("delay(2000)");delay(2000);; // Espera 2 segundos antes de continuar
+
+  const char* message1 = "Gracias por su";
+  int startPosition1 = (20 - strlen(message1)) / 2;  // Asume que el ancho del LCD es de 20 caracteres
+  lcd.setCursor(startPosition1, 1); // Establece el cursor en la primera fila
+  lcd.print(message1); // Muestra el mensaje "Gracias por su"
+
+  const char* message2 = "compra";
+  int startPosition2 = (20 - strlen(message2)) / 2;  // Asume que el ancho del LCD es de 20 caracteres
+  lcd.setCursor(startPosition2, 2); // Establece el cursor en la segunda fila
+  lcd.print(message2); // Muestra el mensaje "compra"
+
+  Serial.println("delay(2000)");
+  delay(2000); // Espera 2 segundos antes de continuar
+  lcd.clear();
 }
 
 
@@ -351,8 +321,9 @@ void showWelcomeMessage(){
   // const char* text3 = "SAC de Mexico";
   const char* text = "Bienvenidos";
   const char* text2 = "Ingrese monedas";
+  const char* text3 = "SAC de Mexico";
 
-  printLines(text, text2, NULL, NULL);
+  printLines(text, text2, NULL, text3);
 }
 
 /**
@@ -697,7 +668,12 @@ void costOfProduct(const char* message = "", int index = 0){
   lcd.print(" $:");  // Muestra el símbolo de dólar
   lcd.print(productCost[index], 1);  // Muestra el costo del producto con un decimal
   lcd.print(" lt");  // Muestra la unidad de medida del producto
-  lcd.setCursor(2, 1);  // Establece el cursor en la segunda fila
+
+  int messageLength = strlen(message);
+  int lcdWidth = 20;  // Asume que el ancho del LCD es de 20 caracteres
+  int startPosition = (lcdWidth - messageLength) / 2;
+
+  lcd.setCursor(startPosition, 1);  // Establece el cursor en la segunda fila
   lcd.print(message);  // Muestra el mensaje (si se proporciona)
 }
 
@@ -711,7 +687,7 @@ void costOfProduct(const char* message = "", int index = 0){
 void displayProgressBar(int percent) {
   int progressBarWidth = map(percent, 0, 100, 0, LCD_WIDTH);  // Mapea el porcentaje a la anchura de la barra
   
-  lcd.setCursor(0, 1);  // Establece el cursor en la segunda fila
+  lcd.setCursor(0, 2);  // Establece el cursor en la segunda fila
   
   // Recorre cada posición de la barra de progreso y escribe un carácter en la pantalla LCD
   for (int i = 0; i < LCD_WIDTH; i++) {
@@ -751,11 +727,19 @@ void showProduct(int index) {
 
 void goodBye(){
   lcd.clear();
-  lcd.setCursor(4, 0);
-  lcd.print("Gracias ");
-  lcd.setCursor(1, 1);
-  lcd.print("Vuelva pronto");
-  Serial.println("delay(2000)");delay(2000);;
+
+  const char* message1 = "Gracias";
+  int startPosition1 = (20 - strlen(message1)) / 2;  // Asume que el ancho del LCD es de 20 caracteres
+  lcd.setCursor(startPosition1, 1);
+  lcd.print(message1);
+
+  const char* message2 = "Vuelva pronto";
+  int startPosition2 = (20 - strlen(message2)) / 2;  // Asume que el ancho del LCD es de 20 caracteres
+  lcd.setCursor(startPosition2, 2);
+  lcd.print(message2);
+
+  Serial.println("delay(2000)");
+  delay(2000);
   lcd.clear();
 }
 
@@ -921,5 +905,4 @@ int getState(int pinNumber) {
   }
   return (0x01&(estados>>pinNumber));
 }
-
 
