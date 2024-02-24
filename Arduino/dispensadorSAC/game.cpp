@@ -18,12 +18,12 @@ void dinoPieTraseroArriba(int pos){
     }
 
     for (int i = 0; i < 4; i++) {
-        lcd.setCursor(i + pos, 2);
+        if(i == 0)lcd.setCursor(i + pos, 2);
         lcd.write(i + 1);
     }
 
     for (int i = 0; i < 3; i++) {
-        lcd.setCursor(i + pos, 3);
+        if(i == 0)lcd.setCursor(i + pos, 3);
         lcd.write(i + 5);
     }
 }
@@ -31,6 +31,7 @@ void dinoPieTraseroArriba(int pos){
 void dinoPieDelanteroArriba(int pos){
     const byte* charDino[] = {CHARDINO_1, CHARDINO_2, CHARDINO_3, CHARDINO_4, CHARDINO_5D, CHARDINO_6D, CHARDINO_7D};
 
+        unsigned long inicio = millis();
     byte buffer[8];
     for (int i = 0; i < 7; i++) {
         for(int j = 0; j < 8; j++) {
@@ -38,14 +39,16 @@ void dinoPieDelanteroArriba(int pos){
         }
         lcd.createChar(i + 1, buffer);
     }
-
+        unsigned long duracion = millis() - inicio;
+        Serial.print("CAminar dinosario took: ");
+        Serial.println(duracion);
     for (int i = 0; i < 4; i++) {
-        lcd.setCursor(i + pos, 2);
+        if(i == 0)lcd.setCursor(i + pos, 2);
         lcd.write(i + 1);
     }
 
     for (int i = 0; i < 3; i++) {
-        lcd.setCursor(i + pos, 3);
+        if(i == 0)lcd.setCursor(i + pos, 3);
         lcd.write(i + 5);
     }
 }
@@ -173,7 +176,7 @@ int dinoSaltarObstaculo(byte typeObstaculo) {
   saltoBajo = saltoBajo ? dinoSaltarSmall() : false;
 
   if(!saltoAlto && !saltoBajo) { 
-   dinoCaminar(1, 2);
+   dinoCaminar(1, 1);
    tipoSalto = 0;
   }
   return tipoSalto;
@@ -197,27 +200,64 @@ void updateCaracteres(char* caracteres, char* caracteres2, unsigned long& ultimo
 }
 
 
+// void writeCaracteres(int tipo_salto, char* caracteres, char* caracteres2) {
+//     // unsigned long startMillis = millis();  // Guarda el tiempo de inicio
+
+//     int limit = (tipo_salto == JUMP_NULL) ? 16 : LCD_WIDTH;
+//     for (int i = 0; i < limit; i++) {
+//         if (tipo_salto == JUMP_LOW && i <= 15) {
+//             lcd.setCursor(LCD_WIDTH - i - 1, 2);
+//             lcd.write(caracteres2[i]);
+//         } 
+//         if (tipo_salto == JUMP_HIGH || i < 15) {
+//             lcd.setCursor(LCD_WIDTH - i - 1, 2);
+//             lcd.write(caracteres2[i]);
+//         }
+//         lcd.setCursor(LCD_WIDTH - i - 1, 3);
+//         lcd.write(caracteres[i]);
+//     }
+// }
+
 void writeCaracteres(int tipo_salto, char* caracteres, char* caracteres2) {
-    // unsigned long startMillis = millis();  // Guarda el tiempo de inicio
+
 
     int limit = (tipo_salto == JUMP_NULL) ? 16 : LCD_WIDTH;
     for (int i = 0; i < limit; i++) {
         if (tipo_salto == JUMP_LOW && i <= 15) {
-            lcd.setCursor(LCD_WIDTH - i - 1, 2);
-            lcd.write(caracteres2[i]);
-        } 
-        if (tipo_salto == JUMP_HIGH || i < 15) {
-            lcd.setCursor(LCD_WIDTH - i - 1, 2);
-            lcd.write(caracteres2[i]);
+            if (caracteres2[i] != 0x20) {
+                lcd.setCursor(LCD_WIDTH - i - 1, 2);
+                lcd.write(caracteres2[i]);
+                lcd.write(0x20);
+                lcd.write(0x20);
+                if ((LCD_WIDTH - i - 1) == 0){
+                    lcd.setCursor(LCD_WIDTH - i - 1, 2);
+                    lcd.write(0x20);
+                }
+                
+            }
+        }else if (tipo_salto == JUMP_HIGH || i < 15) {
+            if (caracteres2[i] != 0x20) {
+                lcd.setCursor(LCD_WIDTH - i - 1, 2);
+                lcd.write(caracteres2[i]);
+                lcd.write(0x20);
+                lcd.write(0x20);
+                if ((LCD_WIDTH - i - 1) == 0){
+                    lcd.setCursor(LCD_WIDTH - i - 1, 2);
+                    lcd.write(0x20);
+                }
+            }
         }
-        lcd.setCursor(LCD_WIDTH - i - 1, 3);
-        lcd.write(caracteres[i]);
+        if (caracteres[i] != 0x20) {
+            lcd.setCursor(LCD_WIDTH - i - 1, 3);
+            lcd.write(caracteres[i]);
+            lcd.write(0x20);
+            lcd.write(0x20);
+            if ((LCD_WIDTH - i - 1) == 0){
+                lcd.setCursor(LCD_WIDTH - i - 1, 3);
+                lcd.write(0x20);
+            }
+        }
     }
-
-    // unsigned long duration = millis() - startMillis;  // Calcula la duración
-    // Serial.print("writeCaracteres took: ");
-    // Serial.print(duration);
-    // Serial.println(" ms");
 }
 
 void updateScore(int& tipo_salto, char* caracteres, char* caracteres2, unsigned long& score) {
@@ -265,7 +305,7 @@ void dynoGame() {
 
     if (currentTime2 - lastChange2 >= GAME_SPEED) {
         lastChange2 = currentTime2;
-
+        // cuanto tiempo toma la siguiente instrucción?
         updateCaracteres(caracteres, caracteres2, ultimoMovimiento, tiempoActual);
         writeCaracteres(tipo_salto, caracteres, caracteres2);
         updateScore(tipo_salto, caracteres, caracteres2, score);

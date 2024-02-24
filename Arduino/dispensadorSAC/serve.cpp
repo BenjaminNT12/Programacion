@@ -40,8 +40,8 @@ extern unsigned long startTime; // Tiempo de inicio de la dispensación
 unsigned long scrollDelay = 100; // Retardo entre cada paso del desplazamiento
 float totalCredit = 0.0; // Variable para el crédito total acumulado
 
-int score = 0;  
-int scoreHi = 0;
+unsigned long score = 0;  
+unsigned long scoreHi = 0;
 
 bool service = false; // Variable para el crédito total acumulado
 bool firstRun = true;
