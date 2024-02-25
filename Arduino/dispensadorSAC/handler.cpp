@@ -6,8 +6,8 @@
 
 bool tutorialShow = false;
 
-const unsigned long TUTORIAL_WAIT_TIME = 2;
-const unsigned long DYNO_GAME_WAIT_TIME = 3;
+const unsigned long TUTORIAL_WAIT_TIME = 30;
+const unsigned long DYNO_GAME_WAIT_TIME = 60;
 
 bool hasTimeElapsed(unsigned long startTime, int waitTimeInSeconds) {
     return millis() - startTime > waitTimeInSeconds * 1000UL;

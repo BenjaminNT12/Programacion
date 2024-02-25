@@ -1,5 +1,5 @@
 #include "tutorial.h"  
-#include <LiquidCrystal_I2C.h> // Biblioteca para controlar la pantalla LCD
+#include <LCD_I2C.h> // Biblioteca para controlar la pantalla LCD
 
 const char message1[] PROGMEM = "Como usar el dispensador?";
 const char message2[] PROGMEM = "1: Deposite sus monedas en la ranura. ";
@@ -15,7 +15,7 @@ const char* const tutorialMessages[] PROGMEM = {
 
 unsigned int speedTransition = 300;
 
-extern LiquidCrystal_I2C lcd;
+extern LCD_I2C lcd;
 
 void mostrarTutorialLCD() {
   // unsigned long startMillis = millis();  // Guarda el tiempo de inicio

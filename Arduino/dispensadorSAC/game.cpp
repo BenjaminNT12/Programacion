@@ -1,7 +1,7 @@
 #include "game.h"  
-#include <LiquidCrystal_I2C.h> // Biblioteca para controlar la pantalla LCD
+#include <LCD_I2C.h> // Biblioteca para controlar la pantalla LCD
 
-extern LiquidCrystal_I2C lcd;
+extern LCD_I2C lcd;
 extern unsigned long score;
 extern unsigned long scoreHi;
 extern bool firstRun;
@@ -10,7 +10,7 @@ void dinoPieTraseroArriba(int pos){
     const byte* charDino[] = {CHARDINO_1, CHARDINO_2, CHARDINO_3, CHARDINO_4, CHARDINO_5T, CHARDINO_6T, CHARDINO_7T};
 
     byte buffer[8];
-    for (int i = 0; i < 7; i++) {
+    for (int i = 4; i < 7; i++) {
         for(int j = 0; j < 8; j++) {
             buffer[j] = pgm_read_byte_near(charDino[i] + j);
         }
@@ -31,17 +31,13 @@ void dinoPieTraseroArriba(int pos){
 void dinoPieDelanteroArriba(int pos){
     const byte* charDino[] = {CHARDINO_1, CHARDINO_2, CHARDINO_3, CHARDINO_4, CHARDINO_5D, CHARDINO_6D, CHARDINO_7D};
 
-        unsigned long inicio = millis();
     byte buffer[8];
-    for (int i = 0; i < 7; i++) {
+    for (int i = 4; i < 7; i++) {
         for(int j = 0; j < 8; j++) {
             buffer[j] = pgm_read_byte_near(charDino[i] + j);
         }
         lcd.createChar(i + 1, buffer);
     }
-        unsigned long duracion = millis() - inicio;
-        Serial.print("CAminar dinosario took: ");
-        Serial.println(duracion);
     for (int i = 0; i < 4; i++) {
         if(i == 0)lcd.setCursor(i + pos, 2);
         lcd.write(i + 1);
@@ -53,11 +49,23 @@ void dinoPieDelanteroArriba(int pos){
     }
 }
 
+void createFirstDino(){
+    const byte* charDino[] = {CHARDINO_1, CHARDINO_2, CHARDINO_3, CHARDINO_4, CHARDINO_5, CHARDINO_6, CHARDINO_7T};
+
+    byte buffer[8];
+    for (int i = 0; i < 4; i++) {
+        for(int j = 0; j < 8; j++) {
+            buffer[j] = pgm_read_byte_near(charDino[i] + j);
+        }
+        lcd.createChar(i + 1, buffer);
+    }
+}
+
 void dinoAmbosPies(int posH = 1, int posV = 0){
     const byte* charDino[] = {CHARDINO_1, CHARDINO_2, CHARDINO_3, CHARDINO_4, CHARDINO_5, CHARDINO_6, CHARDINO_7T};
 
     byte buffer[8];
-    for (int i = 0; i < 7; i++) {
+    for (int i = 4; i < 7; i++) {
         for(int j = 0; j < 8; j++) {
             buffer[j] = pgm_read_byte_near(charDino[i] + j);
         }
@@ -65,12 +73,12 @@ void dinoAmbosPies(int posH = 1, int posV = 0){
     }
 
     for (int i = 0; i < 4; i++) {
-        lcd.setCursor(i + posH, 2 - posV);
+        if(i == 0)lcd.setCursor(i + posH, 2 - posV);
         lcd.write(i + 1);
     }
 
     for (int i = 0; i < 3; i++) {
-        lcd.setCursor(i + posH, 3 - posV);
+        if(i == 0)lcd.setCursor(i + posH, 3 - posV);
         lcd.write(i + 5);
     }
 }
@@ -110,15 +118,16 @@ void dinoAvanzar(unsigned long intervalo) {
 
 }
 
-bool dinoSaltarHigh() {
+bool dinoSaltarHigh(unsigned char duracionSalto = 5) {
     static unsigned int temporizador1 = 0;
     const int intervalo1 = 1;
-    const int intervalo2 = 5;
+    const int intervalo2 = duracionSalto;
+
 
     if (temporizador1 == 0 || temporizador1 == intervalo1 || temporizador1 == intervalo2) {
         for (int i = 0; i < 4; i++) {
-            lcd.setCursor(1, i);
-            lcd.print("    ");
+            lcd.setCursor(0, i);
+            lcd.print("     ");
         }
     }
 
@@ -137,14 +146,14 @@ bool dinoSaltarHigh() {
     return false;
 }
 
-bool dinoSaltarSmall() {
+bool dinoSaltarSmall(unsigned char duracionSalto = 5) {
     static unsigned int temporizador1 = 0;
-    const int intervalo1 = 5;
+    const int intervalo1 = duracionSaltoL;
 
     if (temporizador1 == 0 || temporizador1 == intervalo1) {
-        for (int i = 0; i < 4; i++) {
-            lcd.setCursor(1, i);
-            lcd.print("    ");
+        for (int i = 1; i < 4; i++) {
+            lcd.setCursor(0, i);
+            lcd.print("     ");
         }
     }
 
@@ -159,7 +168,8 @@ bool dinoSaltarSmall() {
     return false;
 }
 
-int dinoSaltarObstaculo(byte typeObstaculo) {
+int dinoSaltarObstaculo(byte typeObstaculo, unsigned char duracionSaltoH = 5,
+                        unsigned char duracionSaltoL = 5) {
   static bool saltoAlto = false;
   static bool saltoBajo = false;
   static int tipoSalto = 0;
@@ -172,11 +182,11 @@ int dinoSaltarObstaculo(byte typeObstaculo) {
     tipoSalto = JUMP_LOW;
   }
 
-  saltoAlto = saltoAlto ? dinoSaltarHigh() : false;
-  saltoBajo = saltoBajo ? dinoSaltarSmall() : false;
+  saltoAlto = saltoAlto ? dinoSaltarHigh(duracionSaltoH) : false;
+  saltoBajo = saltoBajo ? dinoSaltarSmall(duracionSaltoL) : false;
 
   if(!saltoAlto && !saltoBajo) { 
-   dinoCaminar(1, 1);
+   dinoCaminar(1, 150);
    tipoSalto = 0;
   }
   return tipoSalto;
@@ -200,27 +210,7 @@ void updateCaracteres(char* caracteres, char* caracteres2, unsigned long& ultimo
 }
 
 
-// void writeCaracteres(int tipo_salto, char* caracteres, char* caracteres2) {
-//     // unsigned long startMillis = millis();  // Guarda el tiempo de inicio
-
-//     int limit = (tipo_salto == JUMP_NULL) ? 16 : LCD_WIDTH;
-//     for (int i = 0; i < limit; i++) {
-//         if (tipo_salto == JUMP_LOW && i <= 15) {
-//             lcd.setCursor(LCD_WIDTH - i - 1, 2);
-//             lcd.write(caracteres2[i]);
-//         } 
-//         if (tipo_salto == JUMP_HIGH || i < 15) {
-//             lcd.setCursor(LCD_WIDTH - i - 1, 2);
-//             lcd.write(caracteres2[i]);
-//         }
-//         lcd.setCursor(LCD_WIDTH - i - 1, 3);
-//         lcd.write(caracteres[i]);
-//     }
-// }
-
 void writeCaracteres(int tipo_salto, char* caracteres, char* caracteres2) {
-
-
     int limit = (tipo_salto == JUMP_NULL) ? 16 : LCD_WIDTH;
     for (int i = 0; i < limit; i++) {
         if (tipo_salto == JUMP_LOW && i <= 15) {
@@ -228,44 +218,33 @@ void writeCaracteres(int tipo_salto, char* caracteres, char* caracteres2) {
                 lcd.setCursor(LCD_WIDTH - i - 1, 2);
                 lcd.write(caracteres2[i]);
                 lcd.write(0x20);
-                lcd.write(0x20);
-                if ((LCD_WIDTH - i - 1) == 0){
-                    lcd.setCursor(LCD_WIDTH - i - 1, 2);
-                    lcd.write(0x20);
-                }
                 
             }
-        }else if (tipo_salto == JUMP_HIGH || i < 15) {
+        }else if (tipo_salto == JUMP_HIGH || i < 16) {
             if (caracteres2[i] != 0x20) {
                 lcd.setCursor(LCD_WIDTH - i - 1, 2);
                 lcd.write(caracteres2[i]);
                 lcd.write(0x20);
-                lcd.write(0x20);
-                if ((LCD_WIDTH - i - 1) == 0){
-                    lcd.setCursor(LCD_WIDTH - i - 1, 2);
-                    lcd.write(0x20);
-                }
             }
         }
         if (caracteres[i] != 0x20) {
             lcd.setCursor(LCD_WIDTH - i - 1, 3);
             lcd.write(caracteres[i]);
             lcd.write(0x20);
-            lcd.write(0x20);
-            if ((LCD_WIDTH - i - 1) == 0){
-                lcd.setCursor(LCD_WIDTH - i - 1, 3);
-                lcd.write(0x20);
-            }
         }
     }
 }
 
-void updateScore(int& tipo_salto, char* caracteres, char* caracteres2, unsigned long& score) {
-    if ((caracteres[15] != 0x20 || caracteres2[15] != 0x20) && tipo_salto == JUMP_NULL) {
-        tipo_salto = dinoSaltarObstaculo(caracteres[15] != 0x20 ? 2 : 1);
+void updateScore(int& tipo_salto, char* caracteres, char* caracteres2, unsigned long& score,
+                 unsigned char detectObstacleH = 6, unsigned char detectObstacleL = 5) {
+    unsigned char obstacleH = LCD_WIDTH - detectObstacleH;
+    unsigned char obstacleL = LCD_WIDTH - detectObstacleL;
+
+    if ((caracteres[obstacleL] != 0x20 || caracteres2[obstacleH] != 0x20) && tipo_salto == JUMP_NULL) {
+        tipo_salto = dinoSaltarObstaculo((caracteres[15] != 0x20 ? 2 : 1), duracionSaltoH, duracionSaltoL) ;
         score = (score + 1) % 100000;
     } else {
-        tipo_salto = dinoSaltarObstaculo(0);
+        tipo_salto = dinoSaltarObstaculo(0, duracionSaltoH, duracionSaltoL);
     }
 }
 
@@ -308,7 +287,7 @@ void dynoGame() {
         // cuanto tiempo toma la siguiente instrucción?
         updateCaracteres(caracteres, caracteres2, ultimoMovimiento, tiempoActual);
         writeCaracteres(tipo_salto, caracteres, caracteres2);
-        updateScore(tipo_salto, caracteres, caracteres2, score);
+        updateScore(tipo_salto, caracteres, caracteres2, score, detectOsbtacleH, detectOsbtacleL);
         printScore(scoreHi, score);
     }
 

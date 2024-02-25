@@ -8,12 +8,12 @@
 #include "serve.h"  
 #include "game.h"
 #include "tutorial.h"
-#include <LiquidCrystal_I2C.h> // Biblioteca para controlar la pantalla LCD
+#include <LCD_I2C.h> // Biblioteca para controlar la pantalla LCD
 #include <EEPROM.h> // Biblioteca para acceder a la memoria EEPROM
 #include <ShiftIn.h>
 
 extern ShiftIn<2> shift;
-extern LiquidCrystal_I2C lcd;
+extern LCD_I2C lcd;
 
 byte leds = 0;		
 int menuIndex = 0;
@@ -61,7 +61,7 @@ void resetOutputs() {
 
 void displayScrollingMessage(const String& message, int& scrollPosition, const int messageLength) {
   lcd.clear();
-  lcd.setCursor(15 - scrollPosition, 0);
+  lcd.setCursor(LCD_WIDTH - scrollPosition, 0);
   lcd.print(message);
   lcd.setCursor(0, 1);
   lcd.print("Version 0.0.1");

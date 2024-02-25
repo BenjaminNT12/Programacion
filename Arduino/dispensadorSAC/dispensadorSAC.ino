@@ -1,11 +1,14 @@
 #include <Wire.h> // Biblioteca para la comunicación I2C
-#include <LiquidCrystal_I2C.h> // Biblioteca para controlar la pantalla LCD
+// #include <LiquidCrystal_I2C.h> // Biblioteca para controlar la pantalla LCD
+
 #include <EEPROM.h> // Biblioteca para acceder a la memoria EEPROM
 #include <ShiftIn.h>
 #include "game.h" // Biblioteca para el juego del dinosaurio
 #include "tutorial.h" // Biblioteca para el tutorial
 #include "serve.h" // Biblioteca para el menú
 #include "handler.h" // Biblioteca para el manejo de eventos
+#include <LCD_I2C.h>
+#include <Wire.h>
 
 ShiftIn<2> shift;
 
@@ -25,16 +28,20 @@ extern const int LCD_WIDTH;
 extern const int LCD_HEIGHT;
 extern const int MAX_MENU_ITEMS;
 
+#define WIRESPEED 50000
+
 char message[] = "Dispensador..."; 
 int messageLength = sizeof(message) - 1;
 unsigned long startTime = millis();
 
-LiquidCrystal_I2C lcd(0x27, LCD_WIDTH, LCD_HEIGHT);
+LCD_I2C lcd = LCD_I2C(0x27, LCD_WIDTH, LCD_HEIGHT);
 
 void setup() {
   Serial.begin(115200); 
+  Wire.setClock(WIRESPEED);
   shift.begin(10, 9, 11, 12);
-  lcd.init();
+  lcd.begin();
+  lcd.cursor_off();
   lcd.backlight();
 
   pinMode(BUTTON_UP_PIN, INPUT_PULLUP);
@@ -52,9 +59,10 @@ void setup() {
 
   resetOutputs();
   showScrollingMessage(message, messageLength);
-  setZeroEeprom(MAX_MENU_ITEMS);
+  // setZeroEeprom(MAX_MENU_ITEMS);
   loadFromEEPROM(MAX_MENU_ITEMS);
   showMenu();
+  createFirstDino();
 }
 
 

@@ -9,7 +9,11 @@
 
 const int LCD_WIDTH = 20;
 const int LCD_HEIGHT = 4;
-const int GAME_SPEED = 50;
+const int GAME_SPEED = 200;
+const int detectOsbtacleH = 6;
+const int detectOsbtacleL = 5;
+const int duracionSaltoH = 5;
+const int duracionSaltoL = 4;
 
 
 const PROGMEM byte CHARDINO_1[8] = {0x00, 0x00, 0x00, 0x00, 0x10, 0x18, 0x18, 0x1C};
@@ -31,13 +35,15 @@ void dinoPieDelanteroArriba(int pos);
 void dinoAmbosPies(int posH, int posV);
 void dinoCaminar(int pos, unsigned long tiempo);
 void dinoAvanzar(unsigned long intervalo);
-bool dinoSaltarHigh();
-bool dinoSaltarSmall();
+bool dinoSaltarHigh(unsigned char duracionSalto);
+bool dinoSaltarSmall(unsigned char duracionSalto);
 int dinoSaltarObstaculo(byte typeObstaculo);
 void updateCaracteres(char* caracteres, char* caracteres2, unsigned long& ultimoMovimiento, unsigned long tiempoActual);
 void writeCaracteres(int tipo_salto, char* caracteres, char* caracteres2);
-void updateScore(int& tipo_salto, char* caracteres, char* caracteres2, int& score);
+void updateScore(int& tipo_salto, char* caracteres, char* caracteres2, unsigned long& score,
+                 unsigned char detectObstacleH, unsigned char detectObstacleL);
 void printScore(int scoreHi, int score);
 void dynoGame();
+void createFirstDino();
 
 #endif
