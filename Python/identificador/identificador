@@ -1,0 +1,26 @@
+import numpy as np
+import math
+
+
+class IdentifierSlide_mode:
+    def __init__(self):
+        self.BETTA1 = 0
+        self.BETTA2 = 0
+        self.ALPHA1 = 0
+        self.ALPHA2 = 0
+        self.GAMMA = 0
+        self.K1 = 0
+
+
+    def identifier_slide_mode(self, zg, zt, W1g, W2g, phi, psi, s, u):
+        z1gp = zg[1] + self.BETTA1*zt[1] + self.GAMMA*np.sign(s)
+        z2gp = (np.transpose(W1g)*psi + 
+                np.transpose(W2g)*phi*u + 
+                self.BETTA2*np.sign(s) + 
+                1/(self.ALPHA1*self.K1)*np.sign(zt[2])*abs(zt[2])**(2-self.ALPHA2) + 
+                (self.BETTA1/self.ALPHA1)*zt[2])
+        
+        return z1gp, z2gp
+
+    def __del__(self):
+        print("memoria liberada")

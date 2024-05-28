@@ -27,14 +27,14 @@ from matplotlib.animation import FuncAnimation
 
 
 # url = "https://raw.githubusercontent.com/holtzy/the-python-graph-gallery/master/static/data/global-plastics-production-interpolated.csv"
-url = "https://github.com/TonyFly3000/kaggle/blob/master/global-plastics-production.csv"
-df = pd.read_csv(url)
+# url = "https://github.com/TonyFly3000/kaggle/blob/master/global-plastics-production.csv"
+df = pd.read_csv("/home/nicolas/Github/Programacion/Python/pandas_plot/global-plastics-production.csv")
 
 #df.reset_index(inplace=True)
-df['year'] = np.linspace(1950, 2050, 1001)
-df.index = df['year']
-df.drop(columns=['year'], inplace=True)
-df.head()
+# df['year'] = np.linspace(1950, 2050, 1001)
+# df.index = df['year']
+# df.drop(columns=['year'], inplace=True)
+print(df.head())
 
 
 
@@ -43,39 +43,39 @@ df.head()
 
 
 
-# # parameters
-# background_color = '#0d1b2a'
-# text_color = '#fefae0'
-# line_color = '#d90429'
-# dpi = 50
+# parameters
+background_color = '#0d1b2a'
+text_color = '#fefae0'
+line_color = '#d90429'
+dpi = 50
 
-# # Setting up the plot
-# fig, ax = plt.subplots(figsize=(10, 6), dpi=dpi)
-# fig.set_facecolor(background_color)
-# ax.set_facecolor(background_color)
-# ax.tick_params(axis='y', colors=text_color)
-# ax.spines[['left']].set_color(text_color)
+# Setting up the plot
+fig, ax = plt.subplots(figsize=(10, 6), dpi=dpi)
+fig.set_facecolor(background_color)
+ax.set_facecolor(background_color)
+ax.tick_params(axis='y', colors=text_color)
+ax.spines[['left']].set_color(text_color)
 
 # # Update function for the animation
-# def update(frame):
+def update(frame):
 
-#     # skip first frame
-#     if frame == 0:
-#         return None
+    # skip first frame
+    if frame == 0:
+        return None
 
-#     # initialize subset of data
-#     subset_df = df.iloc[:frame]
-#     ax.clear()
-#     ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+    # initialize subset of data
+    subset_df = df.iloc[:frame]
+    ax.clear()
+    ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
 
-#     # create the line chart
-#     ax.plot(subset_df.index, subset_df['plastic-production'], color=line_color)
-#     ax.scatter(subset_df.index[-1], subset_df['plastic-production'].values[-1], color=line_color, s=100)
+    # create the line chart
+    ax.plot(subset_df.index, subset_df['plastic-production'], color=line_color)
+    ax.scatter(subset_df.index[-1], subset_df['plastic-production'].values[-1], color=line_color, s=100)
 
 # # create and save animation
-# path = '../../static/animations/web-animated-line-chart-with-text-1.gif'
-# ani = FuncAnimation(fig, update, frames=len(df))
-# ani.save(path, fps=5)
+path = 'web-animated-line-chart-with-text-1.gif'
+ani = FuncAnimation(fig, update, frames=len(df))
+ani.save(path, fps=5)
 
 
 
