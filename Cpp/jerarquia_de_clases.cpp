@@ -46,3 +46,27 @@ void Empleado::mostrarEmpleado(){
      mostrarPersona();
      cout<<"sueldo"<<endl;
 }
+
+class Estudiante : public Persona{
+    private:
+        string nivel;
+        string grado;
+    public:
+        Estudiante(string, string);
+        void mostrarEstudiante();
+};
+
+Estudiante::Estudiante(string _nivel, string _grado):Persona(_nombre, _edad){
+    nivel = _nivel;
+    grado = _grado;
+}
+
+class Universitario : public Estudiante{
+    private:
+
+    public:
+    
+}:
+
+
+

@@ -32,7 +32,7 @@ void tiempo::hora(){
 
 int main(){
     tiempo t1(2,5,2);
-    tiempo t2(7503);
+    tiempo t2(7502);
 
     t1.hora();
     t2.hora();
