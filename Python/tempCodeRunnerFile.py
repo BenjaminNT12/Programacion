@@ -1,6 +1,7 @@
-
-# -2.25330.0127029-0.00543951
-# -2.30770.0141329-0.00649435
-# -2.361740.0141769-0.00654311
-# -2.41540.0140769-0.0066418
-# """
+alue = 0
+# max_value_key = 0
+# for key, value in verse_dict.items():
+#     if value > max_value:
+#         max_value = value
+#         max_value_key = key
+# print(max_value_key ,max_value)
