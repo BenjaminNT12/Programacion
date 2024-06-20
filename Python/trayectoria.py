@@ -6,7 +6,7 @@ import math
 _time = np.arange(0, 500, 0.1)  # 500 puntos de tiempo entre 0 y 10
 
 # Calcular dephDesired para cada punto de tiempo
-dephDesired = 0.4*(180/math.pi)*(0.4*np.sin(0.08*_time) + 1.2*np.cos(0.03*_time))+790
+dephDesired = (180/np.pi)*(0.4*(np.sin(0.1*_time) + 0.9*np.cos(0.07*_time)))+790
 
 # Crear la gráfica
 plt.figure()
